@@ -22,14 +22,18 @@ int Plug_Player01(CPhysic_World* &pWorld,SDL_Event* &pEvt,double& dbTimeDiff) {
           break;
 
         case SDLK_a:
-          pBody->ApplyForceToCenter(b2Vec2(-1000,0), true);
+          //pBody->ApplyForceToCenter(b2Vec2(-1000,0), true);
+          //pBody->ApplyLinearImpulseToCenter(b2Vec2(-400,0),true);
+          pBody->SetLinearVelocity(b2Vec2(-10,0));
           break;
         case SDLK_d:
-          pBody->ApplyForceToCenter(b2Vec2( 1000,0), true);
+          //pBody->ApplyForceToCenter(b2Vec2( 1000,0), true);
+          //pBody->ApplyLinearImpulseToCenter(b2Vec2( 400,0),true);
+          pBody->SetLinearVelocity(b2Vec2( 10,0));
           break;
         case SDLK_w:
           //pBody->ApplyForceToCenter(b2Vec2( 0,2000), true);
-          pBody->ApplyLinearImpulseToCenter(b2Vec2( 0,100),true);
+          pBody->ApplyLinearImpulseToCenter(b2Vec2( 0,400),true);
           break;
         case SDLK_s:
           pBody->ApplyForceToCenter(b2Vec2( 0,-2000), true);

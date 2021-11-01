@@ -98,9 +98,7 @@ int CApp::Generate_Sprites(
   for (auto tileset : TMX_context.mapTileSets) {
     int iFirstgid =tileset.first;
     int iTilecount = tileset.second->iTilecount;
-    printf("\033[1;32m[%s][%d] :x: iFirstgid = %d  count %d\033[m\n",
-        __FUNCTION__,__LINE__,
-        iFirstgid,tileset.second->iTilecount);
+    
     for (int iTileCnt =iFirstgid ; iTileCnt < iFirstgid + iTilecount ; 
         iTileCnt++) {
       int iIdxInTileset = iTileCnt - iFirstgid;
@@ -112,7 +110,6 @@ int CApp::Generate_Sprites(
 
       int iTileX   = iMargin + (iIdxInTileset%iColumns)*(iTileWidth+iSpacing);
       int iTileY   = iMargin + (iIdxInTileset/iColumns)*(iTileHeight+iSpacing);
-#if 1 // :x: for test
       // if the tile has specified tile size, apply it
       std::tuple<int,int,int,int> Tile_XYWH_size;
       if (!CTMX_Reader::GetSpecifiedTileSize(TMX_context,iTileCnt,Tile_XYWH_size)) {
@@ -121,15 +118,8 @@ int CApp::Generate_Sprites(
         iTileWidth  = std::get<2>(Tile_XYWH_size);
         iTileHeight = std::get<3>(Tile_XYWH_size);
       }
-#endif
 
       mapSprites[iTileCnt] = {iFirstgid, {iTileX,iTileY,iTileWidth,iTileHeight}};
-      printf("\033[1;33m[%s][%d] :x: chk %d [%s] "
-          "textidx %d x= %d  y= %d, w = %d, h= %d \033[m\n",
-          __FUNCTION__,__LINE__,iTileCnt,tileset.second->strName.c_str(),
-          iFirstgid,
-          iTileX,iTileY,iTileWidth,iTileHeight
-          );
     }
   }
   return 0;
@@ -142,7 +132,7 @@ int CApp::OnExecute(SDL_Renderer* pRenderer) {
 
   double dbActualFPS = 0.0f;
   double dbTimeDiff;
-  int iCnt=0;
+  //int iCnt=0;
   if (SDL_SetRenderDrawColor(pRenderer, 255, 0, 0, SDL_ALPHA_OPAQUE)) {
     printf("\033[1;31m[%s][%d] :x: Err \033[m\n",__FUNCTION__,__LINE__);
     bQuit = true;
@@ -203,13 +193,9 @@ int CApp::OnExecute(SDL_Renderer* pRenderer) {
             break;
 
           case SDLK_d:
-printf("\033[1;32m[%s][%d] :x: chk \033[m\n",__FUNCTION__,__LINE__);
-
             break;
           case SDLK_LEFT:
             (std::get<0>(m_DisplayOffSet))--;
-            printf("\033[1;33m[%s][%d] :x: Left \033[m\n",__FUNCTION__,__LINE__);
-
             break;
           case SDLK_RIGHT:
             (std::get<0>(m_DisplayOffSet))++;
@@ -244,8 +230,8 @@ printf("\033[1;32m[%s][%d] :x: chk \033[m\n",__FUNCTION__,__LINE__);
     if (!m_bStopFlag)
       Spin_World(dbTimeDiff, m_pWorld);
 
-    if ( (iCnt++)%100 ==0 )
-      printf("\033[1;33m[%s][%d] :x: FPS = %f  \033[m\n",__FUNCTION__,__LINE__,dbActualFPS);
+    //if ( (iCnt++)%100 ==0 )
+    //  printf("\033[1;33m[%s][%d] :x: FPS = %f  \033[m\n",__FUNCTION__,__LINE__,dbActualFPS);
 
 
   }
