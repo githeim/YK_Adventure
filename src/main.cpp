@@ -19,11 +19,15 @@
 
 #include "TMX_Reader/CTMX_Reader.h"
 #include "CApp.h"
-
-void DrawPhysicWorld() {
-
+std::shared_ptr<CApp> g_pApp;
+int Dbg_DrawPoint_Scale(float fX_M,float fY_M) {
+  return g_pApp->Draw_Point_Scale(fX_M,fY_M);
 }
-
+int Dbg_DrawLine_Scale(float fAX_M,float fAY_M,
+                       float fBX_M,float fBY_M
+    ) {
+  return g_pApp->Draw_Line_Scale(fAX_M,fAY_M,fBX_M,fBY_M);
+}
 
 
 int main(int argc, char *argv[]) {
@@ -36,11 +40,13 @@ int main(int argc, char *argv[]) {
 
 
   std::shared_ptr pApp = std::make_shared<CApp>();
+  g_pApp = pApp;
   pApp->Register_Textures(*pTMX_Ctx,strTileResourcePath);
   pApp->Generate_Sprites(*pTMX_Ctx,pApp->m_mapSprites);
   
   pApp->Create_World(*pTMX_Ctx);
 
+ 
   pApp->OnExecute();
 
   return 0;

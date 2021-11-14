@@ -7,9 +7,55 @@ static float GetDistance(float fX1,float fY1, float fX2, float fY2) {
       pow(fY2 - fY1, 2) * 1.0);
 };
 
+class WorldContactListener : public b2ContactListener
+{
+public:
+  WorldContactListener(CPhysic_World* pWorld):m_pPhysic_World(pWorld) {
+  }
+  ~WorldContactListener() {
+  }
+  
+  void BeginContact(b2Contact* contact) {
+
+  }
+
+  void EndContact(b2Contact* contact) {
+#if 0 // :x: for test
+    std::tuple Data = m_pPhysic_World->m_mapBodies[contact->GetFixtureA()->GetBody()];
+    printf("\033[1;33m[%s][%d] :x: Fix A =%d \033[m\n",
+        __FUNCTION__,__LINE__,std::get<0>(Data));
+
+    Data = m_pPhysic_World->m_mapBodies[contact->GetFixtureB()->GetBody()];
+    printf("\033[1;33m[%s][%d] :x: Fix B =%d \033[m\n",
+        __FUNCTION__,__LINE__,std::get<0>(Data));
+
+    auto pManifold = contact->GetManifold();
+      
+    printf("\033[1;32m[%s][%d] :x: manifold type =%d, points =%d \033[m\n",
+        __FUNCTION__,__LINE__,pManifold->type,pManifold->pointCount);
+    printf("\033[1;33m[%s][%d] :x: chk %d %d \033[m\n",
+        __FUNCTION__,__LINE__,pManifold->localPoint.x,pManifold->localPoint.y);
+    for (auto point : pManifold->points) {
+      printf("\033[1;33m[%s][%d] :x: points  %f %f  \033[m\n",
+          __FUNCTION__,__LINE__,point.localPoint.x,point.localPoint.y);
+    }
+    
+    printf("\033[1;33m[%s][%d] :x: normal %f %f \033[m\n",
+        __FUNCTION__,__LINE__,pManifold->localNormal.x,pManifold->localNormal.y);
+#endif // :x: for test
+
+
+
+
+  }
+
+  CPhysic_World* m_pPhysic_World;
+};
 int CPhysic_World::Create_World(TMX_Ctx &TMX_context) {
   b2Vec2 gravity(0.0f,-10.0f);
   m_pWorld = new b2World(gravity);
+  m_pContactListener = new WorldContactListener(this);
+  m_pWorld->SetContactListener(m_pContactListener);
 
   // Define body define
   b2BodyDef* pBodyDef;
@@ -162,6 +208,9 @@ int CPhysic_World::Destroy_World() {
   for (auto body : m_mapBodies) {
     m_pWorld->DestroyBody(body.first);
   }
+  if (m_pContactListener)
+    delete m_pContactListener;
+
   delete m_pWorld;
   return 0;
 }

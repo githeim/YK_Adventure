@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "box2d/box2d.h"
 #include "TMX_Reader/CTMX_Reader.h"
+class WorldContactListener;
 class CPhysic_World {
 public:
   CPhysic_World(TMX_Ctx & TMX_context,float fWorldScale_Pixel_per_Meter=18.f) {
@@ -37,6 +38,7 @@ public:
   std::map<std::string,std::vector<b2Body*>> m_mapTags;
   float m_fScale_Pixel_per_Meter;
 
+  WorldContactListener* m_pContactListener = nullptr;
 };
 
 #endif /* ifndef _CPHYSIC_WORLD_H_ */

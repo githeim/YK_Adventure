@@ -68,8 +68,24 @@ public:
                        SDL_Renderer* &pRenderer);
   void Draw_Sprite(int iPixel_X, int iPixel_Y, int iIdx,float fAngle); 
   void Draw_Sprite(int iPixel_X, int iPixel_Y, int iIdx);
+  int  Draw_Point_Pixel(float iPixel_X,float iPixel_Y,SDL_Renderer* & pRenderer);
+  int  Draw_Point_Pixel(float fPixel_X,float fPixel_Y);
+  int  Draw_Point_Scale(float fX_M,float fY_M,CPhysic_World* pWorld,
+                        SDL_Renderer* pRenderer);
+  int  Draw_Point_Scale(float fX_M,float fY_M);
+  int  Draw_Line_Pixel(float fPixelA_X,float fPixelA_Y,
+                       float fPixelB_X,float fPixelB_Y,
+                       SDL_Renderer* & pRenderer );
+  int  Draw_Line_Pixel(float fPixelA_X,float fPixelA_Y,
+                       float fPixelB_X,float fPixelB_Y);
 
-  int Create_World(TMX_Ctx &TMX_context);
+  int  Draw_Line_Scale(float fPixelA_X,float fPixelA_Y,
+                       float fPixelB_X,float fPixelB_Y);
+  int  Draw_Line_Scale(float fPixelA_X,float fPixelA_Y,
+                       float fPixelB_X,float fPixelB_Y, 
+                       CPhysic_World* pWorld, SDL_Renderer* pRenderer);
+
+  int  Create_World(TMX_Ctx &TMX_context);
 
   int Spin_World(double &dbTimeDiff,CPhysic_World* pWorld);
 
