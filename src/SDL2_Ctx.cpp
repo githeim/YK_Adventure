@@ -10,7 +10,8 @@ int Init_SDL_ctx(SDL_Window* &pWindow, SDL_Renderer* &pRenderer) {
     return -1;
   }
 
-  pWindow = SDL_CreateWindow( "YK_Adventure", 
+  //pWindow = SDL_CreateWindow( "YK_Adventure", 
+  pWindow = SDL_CreateWindow( "phys_test", 
       SCREEN_POS_X, SCREEN_POS_Y, 
       SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN );
   if( pWindow == NULL )

@@ -34,6 +34,7 @@ public:
 
   std::map<std::string,b2BodyDef*>      m_mapBodyDef;
   std::map<std::string,b2PolygonShape*> m_mapPolygonShape;
+  std::map<std::string,b2EdgeShape*>    m_mapEdgeshape;
 
   std::map<std::string,std::vector<b2Body*>> m_mapTags;
   float m_fScale_Pixel_per_Meter;

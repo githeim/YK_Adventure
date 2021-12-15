@@ -250,9 +250,7 @@ void CApp::Draw_Sprite(int iPixel_X, int iPixel_Y, int iIdx,
   int iOffset_Y=std::get<1>(m_DisplayOffSet);;
   int iTexIdx =std::get<0>(mapSprites[iIdx]);
   SDL_Rect Rect_Sprite = std::get<1>(mapSprites[iIdx]);
-  
 
-  //SDL_Rect DstRect = {iPixel_X,iPixel_Y,Rect_Sprite.w,Rect_Sprite.h};
   SDL_Rect DstRect = {
     (int)((float)iPixel_X*fScale+(float)iOffset_X),
     (int)((float)iPixel_Y*fScale+(float)iOffset_Y),
@@ -321,11 +319,11 @@ int CApp::Draw_Point_Pixel(float fPixel_X,float fPixel_Y,
   float fX = fPixel_X+std::get<0>(m_DisplayOffSet);
   float fY = fPixel_Y+std::get<1>(m_DisplayOffSet);
   SDL_SetRenderDrawColor(m_pRenderer,255, 255, 0, SDL_ALPHA_OPAQUE);
-  SDL_RenderDrawPointF(pRenderer,fX,   fY);
-  SDL_RenderDrawPointF(pRenderer,fX-1, fY);
-  SDL_RenderDrawPointF(pRenderer,fX+1, fY);
-  SDL_RenderDrawPointF(pRenderer,fX,   fY-1);
-  SDL_RenderDrawPointF(pRenderer,fX,   fY+1);
+  SDL_RenderDrawPoint(pRenderer,fX,   fY);
+  SDL_RenderDrawPoint(pRenderer,fX-1, fY);
+  SDL_RenderDrawPoint(pRenderer,fX+1, fY);
+  SDL_RenderDrawPoint(pRenderer,fX,   fY-1);
+  SDL_RenderDrawPoint(pRenderer,fX,   fY+1);
   return 0;
 }
 
@@ -367,6 +365,10 @@ int CApp::Draw_World(CPhysic_World* pWorld,SDL_Renderer* pRenderer) {
     float fWidth = std::get<1>(body.second);
     float fHeight = std::get<2>(body.second);
 
+    if (fWidth == 30.0) {
+printf("\033[1;32m[%s][%d] :x: chk  %f\033[m\n",__FUNCTION__,__LINE__,fHeight);
+
+    }
     b2Body* pBody = body.first;
     b2Vec2 vecPos = pBody->GetPosition();
     float fAngle = pBody->GetAngle();

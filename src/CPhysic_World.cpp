@@ -69,9 +69,23 @@ int CPhysic_World::Create_World(TMX_Ctx &TMX_context) {
 
   // Define shapes
   // basic 1 m X 1 m box ; 18 pixel X 18 pixel
-  b2PolygonShape* pBasic_1X1_Box = new b2PolygonShape();
-  pBasic_1X1_Box->SetAsBox(1.0f/2.f, 1.0f/2.f);
-  m_mapPolygonShape["1X1_Box"] = pBasic_1X1_Box;
+  b2EdgeShape* pBasic_1X1_Box_Up = new b2EdgeShape();
+  b2EdgeShape* pBasic_1X1_Box_Down = new b2EdgeShape();
+  b2EdgeShape* pBasic_1X1_Box_Left = new b2EdgeShape();
+  b2EdgeShape* pBasic_1X1_Box_Right = new b2EdgeShape();
+  b2Vec2 v0(-0.5f, 0.5f);
+  b2Vec2 v1( 0.5f, 0.5f);
+  b2Vec2 v2( 0.5f,-0.5f);
+  b2Vec2 v3(-0.5f,-0.5f);
+
+  pBasic_1X1_Box_Up->SetOneSided(v2,v1,v0,v3);
+  pBasic_1X1_Box_Down->SetOneSided(v0,v3,v2,v1);
+  pBasic_1X1_Box_Left->SetOneSided(v1,v0,v3,v2);
+  pBasic_1X1_Box_Right->SetOneSided(v3,v2,v1,v0);
+  m_mapEdgeshape["1X1_Box_Up"]    = pBasic_1X1_Box_Up;
+  m_mapEdgeshape["1X1_Box_Down"]  = pBasic_1X1_Box_Down;
+  m_mapEdgeshape["1X1_Box_Left"]  = pBasic_1X1_Box_Left;
+  m_mapEdgeshape["1X1_Box_Right"] = pBasic_1X1_Box_Right;
 
   // Character 1.33 m X 1.33 m box ; 24 pixel X 24 pixel
   b2PolygonShape* pCharacter_Box = new b2PolygonShape();
@@ -114,13 +128,6 @@ int CPhysic_World::Create_World(TMX_Ctx &TMX_context) {
       // physic engine
       std::tuple<int,int,int,int> Tile_XYWH_size;
       if (!CTMX_Reader::GetSpecifiedTileSize(TMX_context,iIdx,Tile_XYWH_size)) {
-      //  printf("\033[1;33m[%s][%d] :x: chk %d %d %d %d\033[m\n",
-      //      __FUNCTION__,__LINE__,
-      //      std::get<0>(Tile_XYWH_size),
-      //      std::get<1>(Tile_XYWH_size),
-      //      std::get<2>(Tile_XYWH_size),
-      //      std::get<3>(Tile_XYWH_size)
-      //      );
         fTileSizeWidth_M  = (float)std::get<2>(Tile_XYWH_size)/fBaseTileWidth;
         fTileSizeHeight_M = (float)std::get<3>(Tile_XYWH_size)/fBaseTileHeight;
       }
@@ -138,8 +145,6 @@ int CPhysic_World::Create_World(TMX_Ctx &TMX_context) {
         std::string strPhysicType;
         if ( !CTMX_Reader::GetPhysicType(TMX_context,iIdx,strPhysicType)) {
           if (strPhysicType == "Dynamic") {
-
-
             b2Body* pBody =m_pWorld->CreateBody(m_mapBodyDef["dynamic_tile"]);
             std::string strTag;
             if (!CTMX_Reader::GetTag(TMX_context, iIdx, strTag)) {
@@ -181,7 +186,12 @@ int CPhysic_World::Create_World(TMX_Ctx &TMX_context) {
           else if (strPhysicType == "Ground") {
             //printf("\033[1;33m[%s][%d] :x: Ground \033[m\n",__FUNCTION__,__LINE__);
             b2Body* pBody =m_pWorld->CreateBody(m_mapBodyDef["ground_tile"]);
-            pBody->CreateFixture(m_mapPolygonShape["1X1_Box"],0.f);
+            // :x: using edge shape for tile structure
+            pBody->CreateFixture(m_mapEdgeshape["1X1_Box_Up"],0.f);
+            pBody->CreateFixture(m_mapEdgeshape["1X1_Box_Down"],0.f);
+            pBody->CreateFixture(m_mapEdgeshape["1X1_Box_Left"],0.f);
+            pBody->CreateFixture(m_mapEdgeshape["1X1_Box_Right"],0.f);
+
             pBody->SetTransform(b2Vec2(fX_M,fY_M),0.f); 
             m_mapBodies[pBody] = std::tuple<int,float,float>(iIdx,1.0f,1.0f);
           }
@@ -192,6 +202,15 @@ int CPhysic_World::Create_World(TMX_Ctx &TMX_context) {
     } 
 
   }
+#if 0 // :x: for test big ground
+  b2Body* pBody =m_pWorld->CreateBody(m_mapBodyDef["ground_tile"]);
+  b2PolygonShape* pPolygon = new b2PolygonShape();
+  pPolygon->SetAsBox(30/2.f, 2/2.f);
+
+  pBody->CreateFixture(pPolygon,0.f);
+  pBody->SetTransform(b2Vec2(0,5),0.f); 
+  m_mapBodies[pBody] = std::tuple<int,float,float>(123,30,2);
+#endif // :x: for test
 
   return 0;
 }
@@ -203,6 +222,9 @@ int CPhysic_World::Destroy_World() {
   
   for (auto PolygonShape : m_mapPolygonShape) {
     delete PolygonShape.second;
+  }
+  for (auto EdgeShape : m_mapEdgeshape) {
+    delete EdgeShape.second;
   }
 
   for (auto body : m_mapBodies) {
