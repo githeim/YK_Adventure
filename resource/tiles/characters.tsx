@@ -89,26 +89,31 @@
  <tile id="13">
   <properties>
    <property name="PhysicType" value="Dynamic"/>
+   <property name="Tag" value="Enemy_Ground_Tracker"/>
   </properties>
  </tile>
  <tile id="14">
   <properties>
    <property name="PhysicType" value="Dynamic"/>
+   <property name="Tag" value="Enemy_Ground_Tracker"/>
   </properties>
  </tile>
  <tile id="15">
   <properties>
    <property name="PhysicType" value="Dynamic"/>
+   <property name="Tag" value="Enemy_Ground_Tracker"/>
   </properties>
  </tile>
  <tile id="16">
   <properties>
    <property name="PhysicType" value="Dynamic"/>
+   <property name="Tag" value="Enemy_Ground_Tracker"/>
   </properties>
  </tile>
  <tile id="17">
   <properties>
    <property name="PhysicType" value="Dynamic"/>
+   <property name="Tag" value="Enemy_Ground_Tracker"/>
   </properties>
  </tile>
  <tile id="18">
@@ -118,31 +123,37 @@
    <property name="PhysicSize_X" value="6"/>
    <property name="PhysicSize_Y" value="12"/>
    <property name="PhysicType" value="Dynamic"/>
+   <property name="Tag" value="Enemy_Ground_Tracker"/>
   </properties>
  </tile>
  <tile id="19">
   <properties>
    <property name="PhysicType" value="Dynamic"/>
+   <property name="Tag" value="Enemy_Ground_Tracker"/>
   </properties>
  </tile>
  <tile id="20">
   <properties>
    <property name="PhysicType" value="Dynamic"/>
+   <property name="Tag" value="Enemy_Ground_Tracker"/>
   </properties>
  </tile>
  <tile id="21">
   <properties>
    <property name="PhysicType" value="Dynamic"/>
+   <property name="Tag" value="Enemy_Ground_Tracker"/>
   </properties>
  </tile>
  <tile id="22">
   <properties>
    <property name="PhysicType" value="Dynamic"/>
+   <property name="Tag" value="Enemy_Ground_Tracker"/>
   </properties>
  </tile>
  <tile id="23">
   <properties>
    <property name="PhysicType" value="Dynamic"/>
+   <property name="Tag" value="Enemy_Ground_Tracker"/>
   </properties>
  </tile>
  <tile id="24">

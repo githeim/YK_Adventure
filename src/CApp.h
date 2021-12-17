@@ -7,6 +7,7 @@
 #include "SDL2_Ctx.h"
 #include "CPhysic_World.h"
 #include "Plugins.h"
+#include "CPlugin.h"
 // Sprite type (texture index --> m_mapTextures, sprite area)
 typedef std::tuple<int,SDL_Rect> Sprite_t;
 
@@ -90,13 +91,11 @@ public:
   int Spin_World(double &dbTimeDiff,CPhysic_World* pWorld);
 
   int Execute_Plugins(CPhysic_World* pWorld,SDL_Event* pEvt,double dbTimeDiff,
-            std::vector<std::function<int(CPhysic_World*&,SDL_Event*&,double&)>> 
-                                                                  &vecPlugins);
-  int Register_Plugins();
-  // Plugin Callbacks
-  std::vector<std::function<int(CPhysic_World*&,SDL_Event*&,double&)>> 
-                                                                  m_vecPlugins;
+                      std::vector<CPlugin*> &vecPluginInstance);
 
+  int Register_Plugins();
+  // Plugin Instances
+  std::vector<CPlugin*> m_vecPluginInstance;
 
   SDL_Window*   m_pWindow   = NULL;
   SDL_Renderer* m_pRenderer = NULL;
