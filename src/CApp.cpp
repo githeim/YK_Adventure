@@ -1,4 +1,5 @@
 #include "CApp.h"
+#include "CPlugin.h"
 
 int CApp::Init(
       SDL_Window*   &pWindow, 
@@ -24,8 +25,6 @@ int CApp::Init(
   SDL_RenderDrawRect(pRenderer, &DstRect);
   SDL_SetRenderTarget(pRenderer,nullptr);
 
-  // Register Plugins
-  Register_Plugins();
   return 0;
 }
 
@@ -49,6 +48,11 @@ int CApp::DeInit(
     SDL_DestroyTexture(item.second);
   }
   SDL_DestroyTexture(m_pVectorBoxTexture);
+
+  for (auto pInstance : m_vecPluginInstance) {
+    delete pInstance;
+  }
+  
   // Clear Physic World
   if (m_pWorld) {
     delete m_pWorld;
@@ -220,7 +224,7 @@ int CApp::OnExecute(SDL_Renderer* pRenderer) {
 
       pEvt= &Evt;
     }
-    Execute_Plugins(m_pWorld,pEvt,dbTimeDiff,m_vecPlugins);
+    Execute_Plugins(m_pWorld,pEvt,dbTimeDiff,m_vecPluginInstance);
 
     dbActualFPS = Frame_Rate_Control(SCREEN_FPS,dbTimeDiff);
 
@@ -349,6 +353,10 @@ int CApp::Create_World(TMX_Ctx &TMX_context) {
     delete m_pWorld;
   }
   m_pWorld = new CPhysic_World(TMX_context);
+
+  // Register Plugins
+  Register_Plugins();
+
   return 0;
 }
 
@@ -386,17 +394,17 @@ int CApp::Spin_World(double &dbTimeDiff, CPhysic_World *pWorld) {
   pWorld->SpinWorld (dbTimeDiff);
   return 0;
 }
+
 int CApp::Register_Plugins(){
-  // for player 1's plugin
-  m_vecPlugins.push_back(Plug_Player01);
+  CreatePlugins(m_pWorld->m_mapTags,m_vecPluginInstance);
   return 0;
 }
-int CApp::Execute_Plugins(
-                        CPhysic_World *pWorld, SDL_Event* pEvt,double dbTimeDiff,
-            std::vector<std::function<int(CPhysic_World*&,SDL_Event*&,double&)>> 
-                                                                  &vecPlugins) {
-  for (auto plugin : vecPlugins) {
-    plugin(pWorld,pEvt,dbTimeDiff);
+int CApp::Execute_Plugins(CPhysic_World* pWorld,SDL_Event* pEvt,double dbTimeDiff,
+                          std::vector<CPlugin*> &vecPluginInstance) {
+  for (auto pPlugin : vecPluginInstance) {
+    if (pPlugin->OnExecute != nullptr) {
+      pPlugin->OnExecute(pWorld,pEvt,dbTimeDiff,pPlugin);
+    }
   }
 
   return 0;
