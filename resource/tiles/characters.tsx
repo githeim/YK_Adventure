@@ -64,6 +64,7 @@
  <tile id="8">
   <properties>
    <property name="PhysicType" value="Dynamic"/>
+   <property name="Tag" value="Enemy_Flyer"/>
   </properties>
  </tile>
  <tile id="9">
@@ -159,16 +160,19 @@
  <tile id="24">
   <properties>
    <property name="PhysicType" value="Dynamic"/>
+   <property name="Tag" value="Enemy_Flyer"/>
   </properties>
  </tile>
  <tile id="25">
   <properties>
    <property name="PhysicType" value="Dynamic"/>
+   <property name="Tag" value="Enemy_Flyer"/>
   </properties>
  </tile>
  <tile id="26">
   <properties>
    <property name="PhysicType" value="Dynamic"/>
+   <property name="Tag" value="Enemy_Flyer"/>
   </properties>
  </tile>
 </tileset>

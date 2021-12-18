@@ -245,6 +245,95 @@ int Find_Bodies(std::vector<std::string> &vecTargetTags, float fRange_M,
   return 0;
 }
 
+int Plug_Enemy_Flyer(CPhysic_World* &pWorld, SDL_Event* &pEvt,
+                              double& dbTimeDiff, CPlugin* pInstance) {
+  std::map<std::string, float> & Float_Common = pInstance->m_Float_Common;
+  std::map<std::string, std::string> &Str_Common =pInstance->m_Str_Common;
+  std::map<std::string, int> &Int_Common=pInstance->m_Int_Common;
+  // character control rate --> 0.5 sec
+  float fCtrlRate_SEC = 0.5;
+  // character reaction rate --> 0.8 sec
+  float fReactionRate_SEC = 0.8;
+  // Target Search Range (Meter)
+  float fRange_M = 15.f;
+  float fMoveSpeed = 3.0;
+  float fMoveSpeed_X = 0;
+  float fMoveSpeed_Y = 0;
+
+  b2Body* pBody = pInstance->m_pBody;
+
+  auto vecVelocity = pBody->GetLinearVelocity();
+
+  // Keep Flying ; set gravity 0
+  pBody->SetGravityScale(0);
+  // fix the angle 
+  pBody->SetTransform(pBody->GetPosition(),0);
+
+  Float_Common["InputTimeDiff"] +=dbTimeDiff;
+  if (Float_Common["InputTimeDiff"] > fCtrlRate_SEC ) 
+  {
+    Float_Common["InputTimeDiff"] = 0;
+
+    if (Str_Common["Direction_X"] == "Minus") {
+      fMoveSpeed_X -= fMoveSpeed;
+    }
+    else if (Str_Common["Direction_X"] == "Plus") {
+      fMoveSpeed_X += fMoveSpeed;
+    } else {
+      fMoveSpeed_X = 0;
+    }
+
+    if (Str_Common["Direction_Y"] == "Minus") {
+      fMoveSpeed_Y -= fMoveSpeed;
+    }
+    else if (Str_Common["Direction_Y"] == "Plus") {
+      fMoveSpeed_Y += fMoveSpeed;
+    } else {
+      fMoveSpeed_Y = 0;
+    }
+    pBody->SetLinearVelocity(b2Vec2( fMoveSpeed_X,fMoveSpeed_Y));
+    
+  }
+  Float_Common["ReflectionTimeDiff"] +=dbTimeDiff;
+  if (Float_Common["ReflectionTimeDiff"] > fReactionRate_SEC ) {
+    Float_Common["ReflectionTimeDiff"] = 0;
+
+    // Find Targets
+
+    // Targets are players
+    std::vector<std::string> vecTargetTags = { "Player01","Player02" };
+    std::tuple<float,float> Cur_Pos_M = 
+                              { pBody->GetPosition().x,pBody->GetPosition().y };
+    std::vector<b2Body*> vecTargetBodies;
+    Find_Bodies(vecTargetTags,fRange_M,Cur_Pos_M,vecTargetBodies,pWorld);
+
+    // set the direction to the first target 
+    if (vecTargetBodies.size() > 0) {
+      b2Body* &pTargetBody = vecTargetBodies[0];
+
+      if ( pTargetBody->GetPosition().x < pBody->GetPosition().x ) {
+        Str_Common["Direction_X"] = "Minus";
+      } else 
+      {
+        Str_Common["Direction_X"] = "Plus";
+      }
+      if ( pTargetBody->GetPosition().y < pBody->GetPosition().y ) {
+        Str_Common["Direction_Y"] = "Minus";
+      } else 
+      {
+        Str_Common["Direction_Y"] = "Plus";
+      }
+    } else
+    {
+      Str_Common["Direction_X"] = "Stop";
+      Str_Common["Direction_Y"] = "Stop";
+    }
+  }
+
+
+  return 0;
+}
+
 /**
  * @brief 
  *
@@ -265,7 +354,7 @@ int Plug_Enemy_Ground_Tracker(CPhysic_World* &pWorld, SDL_Event* &pEvt,
   // character reaction rate --> 0.8 sec
   float fReactionRate_SEC = 0.8;
   // Target Search Range (Meter)
-  float fRange_M = 70.f;
+  float fRange_M = 15.f;
 
 
   b2Body* pBody = pInstance->m_pBody;
@@ -278,6 +367,7 @@ int Plug_Enemy_Ground_Tracker(CPhysic_World* &pWorld, SDL_Event* &pEvt,
   float fMass = pBody->GetMass();
   float fJumpImpulse = fMass * 5.0;
   float fMoveSpeed = 2.0;
+  float fMoveSpeed_X = 0;
 
   
 
@@ -292,17 +382,17 @@ int Plug_Enemy_Ground_Tracker(CPhysic_World* &pWorld, SDL_Event* &pEvt,
     Float_Common["InputTimeDiff"] = 0;
 
     if (Str_Common["Direction_X"] == "Minus") {
-      pBody->SetLinearVelocity(b2Vec2( -fMoveSpeed,vecVelocity.y));
+      fMoveSpeed_X -= fMoveSpeed;
     }
     else if (Str_Common["Direction_X"] == "Plus") {
-      pBody->SetLinearVelocity(b2Vec2(  fMoveSpeed,vecVelocity.y));
+      fMoveSpeed_X += fMoveSpeed;
     }
+    pBody->SetLinearVelocity(b2Vec2(  fMoveSpeed_X,vecVelocity.y));
     if (Str_Common["Direction_Y"] == "Plus") {
       if (bIsGround) 
         pBody->ApplyLinearImpulseToCenter(b2Vec2(  0,fJumpImpulse), true);
       Str_Common["Direction_Y"] = "Stop";
     }
-
 
   }
 
@@ -335,9 +425,11 @@ int Plug_Enemy_Ground_Tracker(CPhysic_World* &pWorld, SDL_Event* &pEvt,
           ) {
         Str_Common["Direction_Y"] = "Plus";
       } 
-
     } 
-
+    else {
+      Str_Common["Direction_X"] = "Stop";
+      Str_Common["Direction_Y"] = "Stop";
+    }
   }
 
   return 0;

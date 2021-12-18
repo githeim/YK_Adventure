@@ -30,6 +30,7 @@ int CreatePlugins(std::map<std::string,std::vector<b2Body*>> &mapTags,
       } else if (strTag == "Enemy_Flyer") {
         printf("\033[1;33m[%s][%d] :x: Enemy_Ground_Tracker instance 0x%p\033[m\n",
             __FUNCTION__,__LINE__,pBody);
+        pInstance->OnExecute = Plug_Enemy_Flyer;
       }
       vecPluginInstance.push_back(pInstance);
 
