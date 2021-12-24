@@ -1,5 +1,8 @@
 #include"Plugins.h"
 #include "CPlugin.h"
+#include <memory>
+extern std::shared_ptr<CApp> Get_pApp() ;
+
 
 static float GetDistance(float fX1,float fY1, float fX2, float fY2) {
   // Calculating distance
@@ -235,8 +238,6 @@ int Find_Bodies(std::vector<std::string> &vecTargetTags, float fRange_M,
         }
 
       }
-       
-      
 
     }
     
@@ -253,7 +254,7 @@ int Plug_Enemy_Flyer(CPhysic_World* &pWorld, SDL_Event* &pEvt,
   // character control rate --> 0.5 sec
   float fCtrlRate_SEC = 0.5;
   // character reaction rate --> 0.8 sec
-  float fReactionRate_SEC = 0.8;
+  float fReactionRate_SEC = 0.3;
   // Target Search Range (Meter)
   float fRange_M = 15.f;
   float fMoveSpeed = 3.0;
@@ -335,7 +336,7 @@ int Plug_Enemy_Flyer(CPhysic_World* &pWorld, SDL_Event* &pEvt,
 }
 
 /**
- * @brief 
+ * @brief Enemy ground character
  *
  * @param pWorld
  * @param pEvt
@@ -435,3 +436,46 @@ int Plug_Enemy_Ground_Tracker(CPhysic_World* &pWorld, SDL_Event* &pEvt,
   return 0;
 }
 
+int Plug_FPS_Drawer(CPhysic_World* &pWorld, SDL_Event* &pEvt,
+                              double& dbTimeDiff, CPlugin* pInstance) {
+  std::map<std::string, float> & Float_Common = pInstance->m_Float_Common;
+  float fDisplayRate_SEC = .05f;
+
+  static SDL_Surface* pTxtSurface = nullptr;
+  static SDL_Texture* pTxtTexture = nullptr;
+
+  std::shared_ptr<CApp> pApp =Get_pApp();
+  SDL_Renderer* pRenderer = Get_pApp()->m_pRenderer;
+  TTF_Font*     pFont     = Get_pApp()->m_pFont;
+
+  if (Float_Common.find("DisplayTimeDiff") == Float_Common.end())
+    Float_Common["DisplayTimeDiff"] = 0.f;
+
+
+  Float_Common["DisplayTimeDiff"] +=dbTimeDiff;
+  if (Float_Common["DisplayTimeDiff"] > fDisplayRate_SEC ) {
+    Float_Common["DisplayTimeDiff"] = 0;
+
+    if (pTxtSurface != nullptr && pTxtSurface != nullptr) {
+      SDL_DestroyTexture (pTxtTexture);
+      SDL_FreeSurface(pTxtSurface);
+    }
+
+
+    // Update FPS
+    float fFPS = Get_FPS();
+    std::string strFPS = std::string("FPS : ") + std::to_string(fFPS);
+
+    pTxtSurface = TTF_RenderText_Solid(pFont, strFPS.c_str(), SDL_Color {255,255,255,255} );
+    pTxtTexture = SDL_CreateTextureFromSurface(pRenderer, pTxtSurface);
+
+  }
+
+  if (pTxtSurface != nullptr && pTxtSurface != nullptr) {
+    SDL_Rect DstRect { 20,20,pTxtSurface->w,pTxtSurface->h};
+    SDL_RenderCopyEx(pRenderer,pTxtTexture,NULL,&DstRect,0,NULL,SDL_FLIP_NONE);
+  }
+
+
+  return 0;
+}

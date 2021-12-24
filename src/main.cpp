@@ -20,6 +20,9 @@
 #include "TMX_Reader/CTMX_Reader.h"
 #include "CApp.h"
 std::shared_ptr<CApp> g_pApp;
+std::shared_ptr<CApp> Get_pApp() {
+  return g_pApp;
+}
 int Dbg_DrawPoint_Scale(float fX_M,float fY_M) {
   return g_pApp->Draw_Point_Scale(fX_M,fY_M);
 }

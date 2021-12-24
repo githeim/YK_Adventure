@@ -46,13 +46,14 @@ int DeInit_SDL_ctx(SDL_Window* &pWindow, SDL_Renderer* &pRenderer) {
   return 0;
 }
 
-int Init_Fonts(TTF_Font* &pFont) {
+int Init_Fonts(TTF_Font* &pFont,int iFontSize) {
   if( TTF_Init() == -1 ) {
     printf("\033[1;33m[%s][%d] :x: SDL_ttf could not initialize!"
         " SDL_ttf Error: %s \033[m\n",__FUNCTION__,__LINE__,TTF_GetError());
     return -1;
   }
-	pFont = TTF_OpenFont( "resource/fonts/NanumGothicCoding-Regular.ttf", 28 );
+	pFont = TTF_OpenFont( "resource/fonts/NanumGothicCoding-Regular.ttf", 
+                        iFontSize );
 	if( pFont == NULL )
 	{
     printf("\033[1;31m[%s][%d] :x: Failed to load font [%s] \033[m\n",

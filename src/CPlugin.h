@@ -18,7 +18,9 @@ public:
 };
 
 
-int CreatePlugins(std::map<std::string,std::vector<b2Body*>> &mapTags,
+int CreatePlugins_byTagMap(std::map<std::string,std::vector<b2Body*>> &mapTags,
                   std::vector<CPlugin*> &vecPluginInstance);
+
+int CreateGeneralPlugins(std::vector<CPlugin*> &vecPluginInstance);
 
 #endif // end #ifndef _CPLUGIN_H_

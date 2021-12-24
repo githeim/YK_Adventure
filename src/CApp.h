@@ -125,4 +125,8 @@ public:
   bool m_bStopFlag = false;
 
 };
+
+
+double Get_FPS();
+void   Set_FPS(double dbActualFPS);
 #endif /* ifndef _CAPP_H_ */

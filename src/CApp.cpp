@@ -227,6 +227,8 @@ int CApp::OnExecute(SDL_Renderer* pRenderer) {
     Execute_Plugins(m_pWorld,pEvt,dbTimeDiff,m_vecPluginInstance);
 
     dbActualFPS = Frame_Rate_Control(SCREEN_FPS,dbTimeDiff);
+    Set_FPS(dbActualFPS);
+
 
     // render
     SDL_RenderPresent(pRenderer);
@@ -396,7 +398,8 @@ int CApp::Spin_World(double &dbTimeDiff, CPhysic_World *pWorld) {
 }
 
 int CApp::Register_Plugins(){
-  CreatePlugins(m_pWorld->m_mapTags,m_vecPluginInstance);
+  CreatePlugins_byTagMap(m_pWorld->m_mapTags,m_vecPluginInstance);
+  CreateGeneralPlugins(m_vecPluginInstance);
   return 0;
 }
 int CApp::Execute_Plugins(CPhysic_World* pWorld,SDL_Event* pEvt,double dbTimeDiff,
@@ -409,3 +412,13 @@ int CApp::Execute_Plugins(CPhysic_World* pWorld,SDL_Event* pEvt,double dbTimeDif
 
   return 0;
 }
+
+double g_dbActualFPS =0.0f;
+double Get_FPS() {
+  return g_dbActualFPS;
+}
+void   Set_FPS(double dbActualFPS)
+{
+  g_dbActualFPS = dbActualFPS;
+}
+

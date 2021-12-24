@@ -9,7 +9,7 @@
  *
  * @return 
  */
-int CreatePlugins(std::map<std::string,std::vector<b2Body*>> &mapTags,
+int CreatePlugins_byTagMap(std::map<std::string,std::vector<b2Body*>> &mapTags,
                   std::vector<CPlugin*> &vecPluginInstance)
 {
   for (auto Item : mapTags) {
@@ -38,6 +38,26 @@ int CreatePlugins(std::map<std::string,std::vector<b2Body*>> &mapTags,
 
 
   }
+  return 0;
+}
+
+
+/**
+ * @brief Create Plugin instances that has no physic bodies (= not actor)
+ *
+ * @param vecPluginInstance
+ *
+ * @return 
+ */
+int CreateGeneralPlugins(std::vector<CPlugin*> &vecPluginInstance) {
+
+  // Create FPS Drawer
+
+  auto pInstance = new CPlugin();
+  pInstance->m_pBody= nullptr;
+  pInstance->OnExecute= Plug_FPS_Drawer;
+  vecPluginInstance.push_back(pInstance);
+
   return 0;
 }
 

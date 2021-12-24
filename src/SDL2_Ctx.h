@@ -30,7 +30,7 @@
 int Init_SDL_ctx(SDL_Window* &pWindow, SDL_Renderer* &pRenderer); 
 int DeInit_SDL_ctx(SDL_Window* &pWindow, SDL_Renderer* &pRenderer);
 
-int Init_Fonts(TTF_Font* &pFont); 
+int Init_Fonts(TTF_Font* &pFont,int iFontSize = 18); 
 int DeInit_Fonts(TTF_Font* &pFont); 
 double Frame_Rate_Control(double dbFPS,double &dbTimeDiff_SEC);
 #endif /* ifndef _SDL2_CTX_H_ */
