@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.5" tiledversion="1.5.0" name="tiles" tilewidth="18" tileheight="18" tilecount="180" columns="20">
+<tileset version="1.5" tiledversion="1.7.2" name="tiles" tilewidth="18" tileheight="18" tilecount="180" columns="20">
  <image source="tiles.png" width="360" height="162"/>
  <tile id="0">
   <properties>
@@ -141,6 +141,16 @@
    <property name="PhysicType" value="Ground"/>
   </properties>
  </tile>
+ <tile id="111">
+  <properties>
+   <property name="PhysicType" value="Ground"/>
+  </properties>
+ </tile>
+ <tile id="112">
+  <properties>
+   <property name="PhysicType" value="Ground"/>
+  </properties>
+ </tile>
  <tile id="120">
   <properties>
    <property name="PhysicType" value="Ground"/>
@@ -157,6 +167,11 @@
   </properties>
  </tile>
  <tile id="123">
+  <properties>
+   <property name="PhysicType" value="Ground"/>
+  </properties>
+ </tile>
+ <tile id="131">
   <properties>
    <property name="PhysicType" value="Ground"/>
   </properties>

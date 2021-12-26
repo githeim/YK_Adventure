@@ -225,6 +225,10 @@ int CApp::OnExecute(SDL_Renderer* pRenderer) {
       pEvt= &Evt;
     }
     Execute_Plugins(m_pWorld,pEvt,dbTimeDiff,m_vecPluginInstance);
+    Add_Plugins(m_pWorld,pEvt,dbTimeDiff, 
+                m_vecPluginToAdd, m_vecPluginInstance);
+    Remove_Plugins(m_pWorld,pEvt,dbTimeDiff, 
+                   m_vecPluginToAdd, m_vecPluginInstance);
 
     dbActualFPS = Frame_Rate_Control(SCREEN_FPS,dbTimeDiff);
     Set_FPS(dbActualFPS);
@@ -410,6 +414,53 @@ int CApp::Execute_Plugins(CPhysic_World* pWorld,SDL_Event* pEvt,double dbTimeDif
     }
   }
 
+  return 0;
+}
+int CApp::Add_Plugins(CPhysic_World* pWorld,SDL_Event* pEvt,double dbTimeDiff,
+                      std::vector<CPlugin*> &vecPluginToAdd,
+                      std::vector<CPlugin*> &vecPluginInstance) {
+  if (vecPluginToAdd.size() > 0) {
+    for (auto pPlugin : vecPluginToAdd) {
+      if (pPlugin->OnInit != nullptr) {
+        pPlugin->OnInit(pWorld,pEvt,dbTimeDiff,pPlugin);
+      }
+      vecPluginInstance.push_back(pPlugin);
+    }
+  }
+
+  vecPluginToAdd.clear();
+  return 0;
+}
+int CApp::Remove_Plugins(CPhysic_World* pWorld,SDL_Event* pEvt,double dbTimeDiff,
+                         std::vector<CPlugin*> &vecPluginToRemove,
+                         std::vector<CPlugin*> &vecPluginInstance) {
+  if (vecPluginToRemove.size() > 0) {
+    for (auto pPlugin : vecPluginToRemove) {
+      if (pPlugin->OnDeInit != nullptr) {
+        pPlugin->OnDeInit(pWorld,pEvt,dbTimeDiff,pPlugin);
+      }
+      vecPluginInstance.erase( 
+          std::remove_if(vecPluginInstance.begin(), 
+            vecPluginInstance.end(), 
+            [pPlugin] (CPlugin* item) { return (pPlugin == item);}), 
+          vecPluginInstance.end());
+    }
+    vecPluginToRemove.clear();
+  }
+  return 0;
+}
+
+int CApp::Set_vecPluginToAdd(CPlugin *pPlugin) {
+  m_mtxPluginToAdd.lock();
+  m_vecPluginToAdd.push_back(pPlugin);
+  m_mtxPluginToAdd.unlock();
+  return 0;
+}
+
+int CApp::Set_vecPluginToRemove(CPlugin *pPlugin)  {
+  m_mtxPluginToRemove.lock();
+  m_vecPluginToRemove.push_back(pPlugin);
+  m_mtxPluginToRemove.unlock();
   return 0;
 }
 

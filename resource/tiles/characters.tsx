@@ -90,13 +90,13 @@
  <tile id="13">
   <properties>
    <property name="PhysicType" value="Dynamic"/>
-   <property name="Tag" value="Enemy_Ground_Tracker"/>
+   <property name="Tag" value="Enemy_Spawner"/>
   </properties>
  </tile>
  <tile id="14">
   <properties>
    <property name="PhysicType" value="Dynamic"/>
-   <property name="Tag" value="Enemy_Ground_Tracker"/>
+   <property name="Tag" value="Enemy_Spawner"/>
   </properties>
  </tile>
  <tile id="15">

@@ -32,12 +32,19 @@ int CreatePlugins_byTagMap(std::map<std::string,std::vector<b2Body*>> &mapTags,
             __FUNCTION__,__LINE__,pBody);
         pInstance->OnExecute = Plug_Enemy_Flyer;
       }
+      else if (strTag == "Enemy_Spawner") {
+        pInstance->OnExecute = Plug_Spawner;
+      }
       vecPluginInstance.push_back(pInstance);
 
     }
 
 
   }
+  return 0;
+}
+int CreatePlugin()
+{
   return 0;
 }
 

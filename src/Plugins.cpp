@@ -435,6 +435,29 @@ int Plug_Enemy_Ground_Tracker(CPhysic_World* &pWorld, SDL_Event* &pEvt,
 
   return 0;
 }
+int Plug_Spawner(CPhysic_World* &pWorld, SDL_Event* &pEvt,
+                              double& dbTimeDiff, CPlugin* pInstance) {
+  std::map<std::string, float> & Float_Common = pInstance->m_Float_Common;
+  std::map<std::string, std::string> &Str_Common =pInstance->m_Str_Common;
+  std::map<std::string, int> &Int_Common=pInstance->m_Int_Common;
+
+  b2Body* pBody = pInstance->m_pBody;
+  float fSpawnRate_SEC = 1.0;
+
+
+  pBody->SetGravityScale(0);
+
+  Float_Common["SpawnTimeDiff"] +=dbTimeDiff;
+  if (Float_Common["SpawnTimeDiff"] > fSpawnRate_SEC ) {
+    Float_Common["SpawnTimeDiff"] = 0;
+    //printf("\033[1;33m[%s][%d] :x: Spawn \033[m\n",__FUNCTION__,__LINE__);
+
+
+  }
+
+
+  return 0;
+}
 
 int Plug_FPS_Drawer(CPhysic_World* &pWorld, SDL_Event* &pEvt,
                               double& dbTimeDiff, CPlugin* pInstance) {

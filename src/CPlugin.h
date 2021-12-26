@@ -10,6 +10,11 @@ public:
   b2Body* m_pBody;
   // plugin Callback 
   std::function<int(CPhysic_World* &,SDL_Event* &,double &, CPlugin* )> OnExecute;
+  // Used when it created
+  std::function<int(CPhysic_World* &,SDL_Event* &,double &, CPlugin* )> OnInit;
+  // Used when it destroyed
+  std::function<int(CPhysic_World* &,SDL_Event* &,double &, CPlugin* )> OnDeInit;
+
 
   // Common values for each instance
   std::map<std::string, float> m_Float_Common;

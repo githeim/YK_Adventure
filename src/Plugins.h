@@ -18,4 +18,8 @@ int Plug_Enemy_Flyer(CPhysic_World* &pWorld, SDL_Event* &pEvt,
                               double& dbTimeDiff, CPlugin* pInstance);
 int Plug_FPS_Drawer(CPhysic_World* &pWorld, SDL_Event* &pEvt,
                               double& dbTimeDiff, CPlugin* pInstance);
+int Plug_Spawner(CPhysic_World* &pWorld, SDL_Event* &pEvt,
+                              double& dbTimeDiff, CPlugin* pInstance); 
+
+
 #endif /* ifndef _PLUGINS_H_ */

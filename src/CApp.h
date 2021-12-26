@@ -2,6 +2,7 @@
 #define _CAPP_H_ 
 
 #include <tuple>
+#include <mutex>
 #include <stdio.h>
 #include <functional>
 #include "SDL2_Ctx.h"
@@ -92,10 +93,28 @@ public:
 
   int Execute_Plugins(CPhysic_World* pWorld,SDL_Event* pEvt,double dbTimeDiff,
                       std::vector<CPlugin*> &vecPluginInstance);
+  int Remove_Plugins(CPhysic_World* pWorld,SDL_Event* pEvt,double dbTimeDiff,
+                     std::vector<CPlugin*> &vecPluginToRemove,
+                     std::vector<CPlugin*> &vecPluginInstance);
+  int Add_Plugins(CPhysic_World* pWorld,SDL_Event* pEvt,double dbTimeDiff,
+                  std::vector<CPlugin*> &vecPluginToAdd,
+                  std::vector<CPlugin*> &vecPluginInstance);
+
+
+
+  int Set_vecPluginToAdd(CPlugin* pPlugin);
+  int Set_vecPluginToRemove(CPlugin* pPlugin);
+
+
 
   int Register_Plugins();
   // Plugin Instances
   std::vector<CPlugin*> m_vecPluginInstance;
+  std::vector<CPlugin*> m_vecPluginToAdd;
+  std::vector<CPlugin*> m_vecPluginToRemove;
+  std::mutex m_mtxPluginToAdd;
+  std::mutex m_mtxPluginToRemove;
+  
 
   SDL_Window*   m_pWindow   = NULL;
   SDL_Renderer* m_pRenderer = NULL;
