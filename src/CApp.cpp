@@ -18,7 +18,8 @@ int CApp::Init(
   m_pWorld = nullptr;
 
   // Create Texture for drawing vector box
-  m_pVectorBoxTexture = SDL_CreateTexture(pRenderer, 0, SDL_TEXTUREACCESS_TARGET, 10, 10);
+  m_pVectorBoxTexture = SDL_CreateTexture(pRenderer, 0, 
+                                          SDL_TEXTUREACCESS_TARGET, 10, 10);
   SDL_Rect DstRect = {0,0,10,10};
   SDL_SetRenderTarget(pRenderer, m_pVectorBoxTexture);
   SDL_SetRenderDrawColor(pRenderer, 255,105, 5, SDL_ALPHA_OPAQUE);
@@ -62,7 +63,7 @@ int CApp::DeInit(
 }
 
 /**
- * @brief 
+ * @brief create textures for each tileset
  *
  * @param TMX_context[IN]
  * @param mapTexture[OUT]
@@ -82,7 +83,8 @@ int CApp::Register_Textures(TMX_Ctx                    & TMX_context,
     printf("\033[1;33m[%s][%d] :x: chk %d %s %s\033[m\n",
         __FUNCTION__,__LINE__,item.first,item.second->strImgSourceFile.c_str(),
        strTileResourcePath.c_str() );
-    std::string strTileSetfilepath =strTileResourcePath+item.second->strImgSourceFile;
+    std::string strTileSetfilepath = 
+                               strTileResourcePath+item.second->strImgSourceFile;
     mapTexture[item.first] = IMG_LoadTexture(pRenderer,strTileSetfilepath.c_str());
 
     SDL_QueryTexture(mapTexture[item.first], &format, &access, &w, &h);
@@ -96,6 +98,15 @@ int CApp::Register_Textures(TMX_Ctx                    & TMX_context,
   return 0;
 }
 
+
+/**
+ * @brief Get coordinates of the sprite 
+ *
+ * @param TMX_context[IN]
+ * @param mapSprites[OUT]
+ *
+ * @return 
+ */
 int CApp::Generate_Sprites(
     TMX_Ctx &TMX_context, std::map<int, Sprite_t> &mapSprites) {
   
@@ -354,7 +365,10 @@ int CApp::Draw_Point_Scale(float fX_M,float fY_M) {
 }
 
 
-int CApp::Create_World(TMX_Ctx &TMX_context) {
+int CApp::Create_World(TMX_Ctx &TMX_context,
+                       std::map<std::string,ObjAttr> &mapObjs) 
+{
+  m_mapObjs.clear();
   if (m_pWorld) {
     delete m_pWorld;
   }
@@ -368,21 +382,39 @@ int CApp::Create_World(TMX_Ctx &TMX_context) {
 
 int CApp::Draw_World(CPhysic_World* pWorld,SDL_Renderer* pRenderer) {
   std::map<b2Body*,std::tuple<int,float,float>> &mapBodies = pWorld->m_mapBodies;
+  std::vector<std::tuple<int, float,float,float,float,float>> &vecBackground = 
+                                                      pWorld-> m_vecBackground;
 
   float fScale_Pixel_per_Meter = pWorld->m_fScale_Pixel_per_Meter;
 
   SDL_SetRenderTarget(m_pRenderer, m_mapDrawingTextures[0]);
   SDL_SetRenderDrawColor(m_pRenderer, 55, 55, 55, SDL_ALPHA_OPAQUE);
   SDL_RenderClear(m_pRenderer);
+  // Draw background
+  for (auto background : vecBackground) {
+    int   iIdx    = std::get<0>(background);
+    float fX_M    = std::get<1>(background);
+    float fY_M    = std::get<2>(background);
+    float fWidth  = std::get<3>(background);
+    float fHeight = std::get<4>(background);
+    float fAngle  = std::get<5>(background);
+
+    int iPixel_X = (int)((fX_M-fWidth/2.0f) *fScale_Pixel_per_Meter) +(SCREEN_WIDTH/2);
+    int iPixel_Y = -(int)((fY_M+fHeight/2.0f) *fScale_Pixel_per_Meter)+(SCREEN_HEIGHT/2);
+
+    // do not draw background's vector
+    if (m_bTileDraw == false)
+      m_bVectorDraw = false;
+    Draw_Sprite(iPixel_X, iPixel_Y, iIdx, fAngle);
+    if (m_bTileDraw == false)
+      m_bVectorDraw = true;
+  }
+  // Draw bodies
   for (auto body : mapBodies) {
-    int iIdx = std::get<0>(body.second);
-    float fWidth = std::get<1>(body.second);
+    int   iIdx    = std::get<0>(body.second);
+    float fWidth  = std::get<1>(body.second);
     float fHeight = std::get<2>(body.second);
 
-    if (fWidth == 30.0) {
-printf("\033[1;32m[%s][%d] :x: chk  %f\033[m\n",__FUNCTION__,__LINE__,fHeight);
-
-    }
     b2Body* pBody = body.first;
     b2Vec2 vecPos = pBody->GetPosition();
     float fAngle = pBody->GetAngle();
@@ -427,7 +459,6 @@ int CApp::Add_Plugins(CPhysic_World* pWorld,SDL_Event* pEvt,double dbTimeDiff,
       vecPluginInstance.push_back(pPlugin);
     }
   }
-
   vecPluginToAdd.clear();
   return 0;
 }

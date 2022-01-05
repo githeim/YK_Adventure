@@ -4,7 +4,6 @@
 #include <functional>
 #include "CPhysic_World.h"
 #include <SDL2/SDL.h>
-class CPlugin;
 class CPlugin {
 public:
   b2Body* m_pBody;

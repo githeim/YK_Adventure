@@ -9,8 +9,10 @@
 #include "CPhysic_World.h"
 #include "Plugins.h"
 #include "CPlugin.h"
+#include "ObjAttr.h"
 // Sprite type (texture index --> m_mapTextures, sprite area)
 typedef std::tuple<int,SDL_Rect> Sprite_t;
+
 
 
 #define MAX_SCREENS (4)
@@ -87,7 +89,8 @@ public:
                        float fPixelB_X,float fPixelB_Y, 
                        CPhysic_World* pWorld, SDL_Renderer* pRenderer);
 
-  int  Create_World(TMX_Ctx &TMX_context);
+  int Create_World(TMX_Ctx &TMX_context,
+                   std::map<std::string,ObjAttr_t> &mapObjs);
 
   int Spin_World(double &dbTimeDiff,CPhysic_World* pWorld);
 
@@ -143,6 +146,8 @@ public:
   // stop flag
   bool m_bStopFlag = false;
 
+  // Objects in the App
+  std::map<std::string,ObjAttr_t> m_mapObjs;
 };
 
 

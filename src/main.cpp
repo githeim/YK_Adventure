@@ -32,6 +32,13 @@ int Dbg_DrawLine_Scale(float fAX_M,float fAY_M,
   return g_pApp->Draw_Line_Scale(fAX_M,fAY_M,fBX_M,fBY_M);
 }
 
+std::shared_ptr<TMX_Ctx> g_pTMX_Ctx;
+void Set_pTMX_Ctx(std::shared_ptr<TMX_Ctx> pTMX_Ctx) {
+  g_pTMX_Ctx = pTMX_Ctx;
+}
+std::shared_ptr<TMX_Ctx> Get_pTMX_Ctx() {
+  return g_pTMX_Ctx;
+}
 
 int main(int argc, char *argv[]) {
   printf("Project YK Adventure \n");
@@ -40,16 +47,14 @@ int main(int argc, char *argv[]) {
   CTMX_Reader TMX_Reader;
   std::shared_ptr<TMX_Ctx> pTMX_Ctx = std::make_shared<TMX_Ctx>();
   TMX_Reader.Read_TMX_Ctx("stage00.tmx",*pTMX_Ctx,strTileResourcePath);
+  Set_pTMX_Ctx (pTMX_Ctx);
 
-
-  std::shared_ptr pApp = std::make_shared<CApp>();
+  std::shared_ptr<CApp> pApp = std::make_shared<CApp>();
   g_pApp = pApp;
   pApp->Register_Textures(*pTMX_Ctx,strTileResourcePath);
   pApp->Generate_Sprites(*pTMX_Ctx,pApp->m_mapSprites);
   
-  pApp->Create_World(*pTMX_Ctx);
-
- 
+  pApp->Create_World(*pTMX_Ctx,pApp->m_mapObjs);
   pApp->OnExecute();
 
   return 0;

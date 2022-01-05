@@ -108,7 +108,8 @@ int CPhysic_World::Create_World(TMX_Ctx &TMX_context) {
 
   // 레이어 별로 아이템을 읽어서 body를 생성한다
   for (auto item : TMX_context.mapLayers) {
-    printf("\033[1;33m[%s][%d] :x: chk %s \033[m\n",__FUNCTION__,__LINE__,item.first.c_str());
+    printf("\033[1;33m[%s][%d] :x: Layer %s \033[m\n",
+        __FUNCTION__,__LINE__,item.first.c_str());
     auto &Layer = item.second;
     // 물리 영역 좌상단
     fLeftEdge_M = - ( Layer.iWidth/2.0f )* fBaseTileWidth_M; ;
@@ -116,6 +117,7 @@ int CPhysic_World::Create_World(TMX_Ctx &TMX_context) {
     iIdxCnt = 0;
 
     for ( auto iIdx : Layer.vecTileIdx) {
+
       TileSet *pTileSet;
       int iFirstgid;
       CTMX_Reader::GetTileSetFromIdx(TMX_context,iIdx,pTileSet,iFirstgid);
@@ -144,6 +146,11 @@ int CPhysic_World::Create_World(TMX_Ctx &TMX_context) {
       if (iIdx !=0) {
         std::string strPhysicType;
         if ( !CTMX_Reader::GetPhysicType(TMX_context,iIdx,strPhysicType)) {
+          if (strPhysicType == "Background") {
+            m_vecBackground.push_back(
+                std::tuple<int, float,float,float,float,float>(
+                  iIdx,fX_M,fY_M,1.33,1.33,0));
+          }
           if (strPhysicType == "Dynamic") {
             b2Body* pBody =m_pWorld->CreateBody(m_mapBodyDef["dynamic_tile"]);
             std::string strTag;
@@ -212,6 +219,13 @@ int CPhysic_World::Create_World(TMX_Ctx &TMX_context) {
   m_mapBodies[pBody] = std::tuple<int,float,float>(123,30,2);
 #endif // :x: for test
 
+  for (auto item : m_mapTags) {
+    for (auto pBody : item.second) {
+    printf("\033[1;36m[%s][%d] :x: chk %s %p \033[m\n",
+        __FUNCTION__,__LINE__,item.first.c_str(),pBody);
+    }
+
+  }
   return 0;
 }
 
@@ -241,4 +255,71 @@ void CPhysic_World::SpinWorld(double dbTimeStep,
     int iVelocityIter, int iPositionIter ) {
   m_pWorld->Step(dbTimeStep, iVelocityIter, iPositionIter);
   return;
+}
+b2Body* CPhysic_World::Create_Element(TMX_Ctx &TMX_context, int iTileIdx,
+                                  float fX_M,float fY_M) {
+  std::string strPhysicType;
+  // 기본 타일 사이즈 pixel
+  float fBaseTileWidth = (float)TMX_context.iTileWidth;
+  float fBaseTileHeight =(float)TMX_context.iTileHeight;
+
+  b2Body* pBody = nullptr;
+  TileSet *pTileSet;
+  int iFirstgid;
+  CTMX_Reader::GetTileSetFromIdx(TMX_context,iTileIdx,pTileSet,iFirstgid);
+  // 해당 인덱스의 타일 사이즈, base tile을 1M로 상정하고 Meter를 계산
+  float fTileSizeWidth_M =(float)(pTileSet->iTileWidth) /fBaseTileWidth;
+  float fTileSizeHeight_M=(float)(pTileSet->iTileHeight)/fBaseTileHeight;
+
+  // if the tile has specified its own size, it will be apply to 
+  // physic engine
+  std::tuple<int,int,int,int> Tile_XYWH_size;
+  if (!CTMX_Reader::GetSpecifiedTileSize(TMX_context,iTileIdx,Tile_XYWH_size)) {
+    fTileSizeWidth_M  = (float)std::get<2>(Tile_XYWH_size)/fBaseTileWidth;
+    fTileSizeHeight_M = (float)std::get<3>(Tile_XYWH_size)/fBaseTileHeight;
+  }
+
+  if ( !CTMX_Reader::GetPhysicType(TMX_context,iTileIdx,strPhysicType)) {
+    if (strPhysicType == "Dynamic") {
+      pBody = m_pWorld->CreateBody(m_mapBodyDef["dynamic_tile"]);
+      std::string strTag;
+      if (!CTMX_Reader::GetTag(TMX_context, iTileIdx, strTag)) {
+        printf("\033[1;32m[%s][%d] :x: Tag %s \033[m\n",__FUNCTION__,__LINE__,strTag.c_str());
+        m_mapTags[strTag].push_back(pBody); 
+      }
+      // Find the matched size of polygon
+      auto Polygon = std::find_if(m_mapPolygonShape.begin(),m_mapPolygonShape.end(),
+          [&fTileSizeWidth_M,&fTileSizeHeight_M](auto item) {
+          b2PolygonShape* pShape = item.second;
+          b2Vec2* vertices = pShape->m_vertices;
+          float fWidth = GetDistance(vertices[0].x,vertices[0].y,
+              vertices[1].x,vertices[1].y);
+          float fHeight = GetDistance(vertices[1].x,vertices[1].y,
+              vertices[2].x,vertices[2].y);
+          if (fWidth == fTileSizeWidth_M && fHeight == fTileSizeHeight_M)
+          return true;
+
+          return false;
+          });
+      if (Polygon == m_mapPolygonShape.end())
+      {
+        // if there is no same polygon size, then make the new polygon
+        std::string strPolygonName=std::to_string(fTileSizeWidth_M) + "_"+
+          std::to_string(fTileSizeHeight_M);
+
+        b2PolygonShape* pPolygon = new b2PolygonShape();
+        pPolygon->SetAsBox(fTileSizeWidth_M/2.f, fTileSizeHeight_M/2.f);
+        m_mapPolygonShape[strPolygonName] = pPolygon;
+        pBody->CreateFixture(m_mapPolygonShape[strPolygonName],30.f);
+      }
+      else{
+        pBody->CreateFixture(Polygon->second,30.f);
+      }
+      pBody->SetTransform(b2Vec2(fX_M,fY_M),0.f); 
+      m_mapBodies[pBody] = std::tuple<int,float,float>(
+          iTileIdx,fTileSizeWidth_M,fTileSizeHeight_M);
+    }
+  }
+
+  return pBody;
 }

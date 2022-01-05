@@ -2,7 +2,7 @@
 #include "CPlugin.h"
 #include <memory>
 extern std::shared_ptr<CApp> Get_pApp() ;
-
+extern std::shared_ptr<TMX_Ctx> Get_pTMX_Ctx() ;
 
 static float GetDistance(float fX1,float fY1, float fX2, float fY2) {
   // Calculating distance
@@ -60,6 +60,40 @@ bool IsTouchingGround(b2Body* pBody) {
   return bRet;
 }
 
+/**
+ * @brief Check the body's tag, if the body has same tag to strTargetTag 
+ *        it returns true
+ *
+ * @param pWorld[IN]
+ * @param strTargetTag[IN]
+ * @param pBody[IN]
+ *
+ * @return 
+ */
+bool Chk_Tag(CPhysic_World* &pWorld,
+             std::vector<std::string> vecTargetTags,b2Body* pBody) {
+  std::map<std::string,std::vector<b2Body*>> & mapTags = pWorld->m_mapTags;
+  for ( auto strTargetTag : vecTargetTags) {
+
+    if (mapTags.find(strTargetTag) == mapTags.end()) {
+      return false;
+    }
+    for ( auto pTagBody : pWorld->m_mapTags[strTargetTag]) {
+    if (strTargetTag == "Player02") {
+//printf("\033[1;33m[%s][%d] :x: Player02 %p\033[m\n",__FUNCTION__,__LINE__,pTagBody);
+
+    }
+
+      if ( pBody == pTagBody) {
+printf("\033[1;33m[%s][%d] :x: Tag : %s \033[m\n",__FUNCTION__,__LINE__,strTargetTag.c_str());
+
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 int Plug_Player01(CPhysic_World* &pWorld,SDL_Event* &pEvt,double& dbTimeDiff,
     CPlugin* pInstance) {
 
@@ -71,22 +105,33 @@ int Plug_Player01(CPhysic_World* &pWorld,SDL_Event* &pEvt,double& dbTimeDiff,
   float fJumpImpulse = fMass * 7.0;
   float fMoveSpeed = 6.0;
 
-
-
   static  bool bPrevIsGround = false;
   bool bIsGround=false; 
   bool bIsFly=false; 
   b2WorldManifold worldManifold;
   auto vecVelocity = pBody->GetLinearVelocity();
 
+  // Target to Attack
+  std::vector<std::string> vecTargetTags ={
+    "Enemy_Flyer",
+    "Enemy_Ground_Tracker",
+  };
+
   if (pContacts) {
     do {
+      // Fixture A's body ; the body that is applying force
+      b2Body* pBodyA = pContacts->contact->GetFixtureA()->GetBody();
+      // Fixture B's body ; the body that is received force 
+      b2Body* pBodyB = pContacts->contact->GetFixtureB()->GetBody();
+//      printf("\033[1;38m[%s][%d] :x: pBodyA = %p pBodyB = %p player1 %p \033[m\n",
+//          __FUNCTION__,__LINE__,pBodyA,pBodyB,pWorld->m_mapTags["Player01"][0]);
+      
       // Draw A & B position points
-      b2Vec2 vecPosA; // ground tile
-      vecPosA = pContacts->contact->GetFixtureA()->GetBody()->GetPosition();
+      b2Vec2 vecPosA; // contacted object
+      vecPosA = pBodyA->GetPosition();
       //Dbg_DrawPoint_Scale(vecPosA.x,vecPosA.y);
       b2Vec2 vecPosB; // player
-      vecPosB = pContacts->contact->GetFixtureB()->GetBody()->GetPosition();
+      vecPosB = pBodyB->GetPosition();
       Dbg_DrawPoint_Scale(vecPosB.x,vecPosB.y);
 
       int iPointCount = pContacts->contact->GetManifold()->pointCount;
@@ -99,6 +144,18 @@ int Plug_Player01(CPhysic_World* &pWorld,SDL_Event* &pEvt,double& dbTimeDiff,
         if (IsTouchingGround(&worldManifold,&vecPosB,iPointCount) == true)
           bIsGround = true;
       }
+
+      
+      // Check the tags
+      if (Chk_Tag(pWorld,vecTargetTags,pBodyA)) {
+        // Destroy body
+
+
+      }
+      if (Chk_Tag(pWorld,vecTargetTags,pBodyB)) {
+        printf("\033[1;33m[%s][%d] :x: Bingo \033[m\n",__FUNCTION__,__LINE__);
+      }
+
 
       pContacts = pContacts->next;
     } while (pContacts);
@@ -206,7 +263,7 @@ int Plug_Player01(CPhysic_World* &pWorld,SDL_Event* &pEvt,double& dbTimeDiff,
  * @param vecTargetTags[IN] target tag to find
  * @param fRange_M[IN]
  * @param Position_M[IN]    current position
- * @param vecOutputBodies
+ * @param vecOutputBodies[OUT] found bodies
  * @param pWorld[IN]
  *
  * @return 
@@ -227,7 +284,6 @@ int Find_Bodies(std::vector<std::string> &vecTargetTags, float fRange_M,
          != std::end(vecTargetTags)) {
       for (auto pBody : vecBodies) {
         // Find the bodies in the target range
-
         b2Vec2 vecPos = pBody->GetPosition();
         if (  
             GetDistance(
@@ -236,21 +292,22 @@ int Find_Bodies(std::vector<std::string> &vecTargetTags, float fRange_M,
         {
           vecOutputBodies.push_back(pBody);
         }
-
       }
-
     }
-    
   }
-  
   return 0;
 }
+int Plug_Enemy_Flyer_DeInit(CPhysic_World* &pWorld, SDL_Event* &pEvt,
+                              double& dbTimeDiff, CPlugin* pInstance) {
+  printf("\033[1;31m[%s][%d] :x: DeInit Enemy_Flyer \033[m\n",
+      __FUNCTION__,__LINE__);
 
+  return 0;
+}
 int Plug_Enemy_Flyer(CPhysic_World* &pWorld, SDL_Event* &pEvt,
                               double& dbTimeDiff, CPlugin* pInstance) {
   std::map<std::string, float> & Float_Common = pInstance->m_Float_Common;
   std::map<std::string, std::string> &Str_Common =pInstance->m_Str_Common;
-  std::map<std::string, int> &Int_Common=pInstance->m_Int_Common;
   // character control rate --> 0.5 sec
   float fCtrlRate_SEC = 0.5;
   // character reaction rate --> 0.8 sec
@@ -263,7 +320,6 @@ int Plug_Enemy_Flyer(CPhysic_World* &pWorld, SDL_Event* &pEvt,
 
   b2Body* pBody = pInstance->m_pBody;
 
-  auto vecVelocity = pBody->GetLinearVelocity();
 
   // Keep Flying ; set gravity 0
   pBody->SetGravityScale(0);
@@ -349,7 +405,6 @@ int Plug_Enemy_Ground_Tracker(CPhysic_World* &pWorld, SDL_Event* &pEvt,
                               double& dbTimeDiff, CPlugin* pInstance) {
   std::map<std::string, float> & Float_Common = pInstance->m_Float_Common;
   std::map<std::string, std::string> &Str_Common =pInstance->m_Str_Common;
-  std::map<std::string, int> &Int_Common=pInstance->m_Int_Common;
   // character control rate --> 0.5 sec
   float fCtrlRate_SEC = 0.5;
   // character reaction rate --> 0.8 sec
@@ -438,20 +493,35 @@ int Plug_Enemy_Ground_Tracker(CPhysic_World* &pWorld, SDL_Event* &pEvt,
 int Plug_Spawner(CPhysic_World* &pWorld, SDL_Event* &pEvt,
                               double& dbTimeDiff, CPlugin* pInstance) {
   std::map<std::string, float> & Float_Common = pInstance->m_Float_Common;
-  std::map<std::string, std::string> &Str_Common =pInstance->m_Str_Common;
   std::map<std::string, int> &Int_Common=pInstance->m_Int_Common;
 
+  Int_Common["SpawnLimit"]=6;
   b2Body* pBody = pInstance->m_pBody;
   float fSpawnRate_SEC = 1.0;
 
-
+  b2Body* pSpawnedBody = nullptr;
   pBody->SetGravityScale(0);
+
+  pBody->SetLinearVelocity(b2Vec2( 0,0));
+  b2Vec2 vec2CurPos =   pBody->GetPosition();
+
 
   Float_Common["SpawnTimeDiff"] +=dbTimeDiff;
   if (Float_Common["SpawnTimeDiff"] > fSpawnRate_SEC ) {
     Float_Common["SpawnTimeDiff"] = 0;
-    //printf("\033[1;33m[%s][%d] :x: Spawn \033[m\n",__FUNCTION__,__LINE__);
+    Int_Common["SpawnCount"] ++;
 
+    if (Int_Common["SpawnCount"] < Int_Common["SpawnLimit"]) {
+      std::shared_ptr<TMX_Ctx> pTMX_Ctx =  Get_pTMX_Ctx();
+      pSpawnedBody = pWorld->Create_Element(*(pTMX_Ctx.get()),205,vec2CurPos.x+3,vec2CurPos.y-3);
+      auto pInstance = new CPlugin();
+      pInstance->m_pBody = pSpawnedBody;
+      pInstance->OnExecute = Plug_Enemy_Flyer;
+      std::shared_ptr<CApp> pApp =Get_pApp();
+      pApp->Set_vecPluginToAdd(pInstance);
+
+      printf("\033[1;33m[%s][%d] :x: Spawn \033[m\n",__FUNCTION__,__LINE__);
+    }
 
   }
 
