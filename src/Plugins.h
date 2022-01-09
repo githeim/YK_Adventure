@@ -12,9 +12,22 @@ int Dbg_DrawLine_Scale(float fAX_M,float fAY_M,
 
 int Plug_Player01(CPhysic_World* &pWorld,SDL_Event* &pEvt,double& dbTimeDiff,
                   CPlugin* pInstance);
+int Plug_Enemy_Ground_Tracker_Init(CPhysic_World* &pWorld, SDL_Event* &pEvt,
+                              double& dbTimeDiff, CPlugin* pInstance);
+int Plug_Enemy_Ground_Tracker_DeInit(CPhysic_World* &pWorld, SDL_Event* &pEvt,
+                              double& dbTimeDiff, CPlugin* pInstance);
 int Plug_Enemy_Ground_Tracker(CPhysic_World* &pWorld,SDL_Event* &pEvt,double& dbTimeDiff,
     CPlugin* pInstance);
+int Plug_Enemy_Flyer_Init(CPhysic_World* &pWorld, SDL_Event* &pEvt,
+                              double& dbTimeDiff, CPlugin* pInstance);
+int Plug_Enemy_Flyer_DeInit(CPhysic_World* &pWorld, SDL_Event* &pEvt,
+                              double& dbTimeDiff, CPlugin* pInstance);
 int Plug_Enemy_Flyer(CPhysic_World* &pWorld, SDL_Event* &pEvt,
+                              double& dbTimeDiff, CPlugin* pInstance);
+
+int Plug_FPS_Drawer_Init(CPhysic_World* &pWorld, SDL_Event* &pEvt,
+                              double& dbTimeDiff, CPlugin* pInstance);
+int Plug_FPS_Drawer_DeInit(CPhysic_World* &pWorld, SDL_Event* &pEvt,
                               double& dbTimeDiff, CPlugin* pInstance);
 int Plug_FPS_Drawer(CPhysic_World* &pWorld, SDL_Event* &pEvt,
                               double& dbTimeDiff, CPlugin* pInstance);

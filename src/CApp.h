@@ -102,6 +102,11 @@ public:
   int Add_Plugins(CPhysic_World* pWorld,SDL_Event* pEvt,double dbTimeDiff,
                   std::vector<CPlugin*> &vecPluginToAdd,
                   std::vector<CPlugin*> &vecPluginInstance);
+  int Init_Plugins(CPhysic_World* pWorld,
+                   std::vector<CPlugin*> & vecPluginInstance);
+  int DeInit_Plugins(CPhysic_World* pWorld,
+                   std::vector<CPlugin*> & vecPluginInstance);
+
 
 
 

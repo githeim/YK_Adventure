@@ -4,15 +4,15 @@
 #include "box2d/box2d.h"
 #include "TMX_Reader/CTMX_Reader.h"
 
-//#include"ObjAttr.h"
+#include"ObjAttr.h"
 
 class WorldContactListener;
 class CPhysic_World {
 public:
-  CPhysic_World(TMX_Ctx & TMX_context,
+  CPhysic_World(TMX_Ctx & TMX_context, std::map<std::string,ObjAttr_t>& mapObjs,
       float fWorldScale_Pixel_per_Meter=18.f) {
     m_fScale_Pixel_per_Meter = fWorldScale_Pixel_per_Meter;
-    if ( Create_World(TMX_context)) {
+    if ( Create_World(TMX_context,mapObjs)) {
       printf("\033[1;31m[%s][%d] :x: Err on create world \033[m\n",
           __FUNCTION__,__LINE__);
       return;
@@ -24,8 +24,12 @@ public:
     Destroy_World();
   }
 
-  int Create_World(TMX_Ctx & TMX_context); 
+  int Create_World(TMX_Ctx & TMX_context,
+                   std::map<std::string,ObjAttr_t>& mapObjs); 
 
+  int Create_BodyDefs(std::map<std::string,b2BodyDef*>& mapBodyDef);
+  int Create_EdgeShapes(std::map<std::string,b2EdgeShape*>&  mapEdgeshape);
+  int Create_PolygonShape(std::map<std::string,b2PolygonShape*>& mapPolygonShape);
   b2Body* Create_Element(TMX_Ctx & TMX_context,int iTileIdx,float fX_M,float fY_M);
 
   int Destroy_World();

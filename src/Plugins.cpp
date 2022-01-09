@@ -231,7 +231,6 @@ int Plug_Player01(CPhysic_World* &pWorld,SDL_Event* &pEvt,double& dbTimeDiff,
 
         }
       }
-
       
       Prev_Key_Input = pEvt->key.keysym.sym;
     }
@@ -297,9 +296,22 @@ int Find_Bodies(std::vector<std::string> &vecTargetTags, float fRange_M,
   }
   return 0;
 }
+int Plug_Enemy_Flyer_Init(CPhysic_World* &pWorld, SDL_Event* &pEvt,
+                              double& dbTimeDiff, CPlugin* pInstance) {
+  printf("\033[1;33m[%s][%d] :x: Init Enemy_Flyer \033[m\n",
+      __FUNCTION__,__LINE__);
+  std::map<std::string, float> & Float_Common = pInstance->m_Float_Common;
+
+  // Initiation
+  Float_Common["InputTimeDiff"]= 0.f;
+  Float_Common["ReflectionTimeDiff"]= 0.f;
+  return 0;
+}
+
+
 int Plug_Enemy_Flyer_DeInit(CPhysic_World* &pWorld, SDL_Event* &pEvt,
                               double& dbTimeDiff, CPlugin* pInstance) {
-  printf("\033[1;31m[%s][%d] :x: DeInit Enemy_Flyer \033[m\n",
+  printf("\033[1;33m[%s][%d] :x: DeInit Enemy_Flyer \033[m\n",
       __FUNCTION__,__LINE__);
 
   return 0;
@@ -319,7 +331,6 @@ int Plug_Enemy_Flyer(CPhysic_World* &pWorld, SDL_Event* &pEvt,
   float fMoveSpeed_Y = 0;
 
   b2Body* pBody = pInstance->m_pBody;
-
 
   // Keep Flying ; set gravity 0
   pBody->SetGravityScale(0);
@@ -390,6 +401,28 @@ int Plug_Enemy_Flyer(CPhysic_World* &pWorld, SDL_Event* &pEvt,
 
   return 0;
 }
+int Plug_Enemy_Ground_Tracker_Init(CPhysic_World* &pWorld, SDL_Event* &pEvt,
+                              double& dbTimeDiff, CPlugin* pInstance) {
+  printf("\033[1;33m[%s][%d] :x: Init  \033[m\n", __FUNCTION__,__LINE__);
+  std::map<std::string, float> & Float_Common = pInstance->m_Float_Common;
+  std::map<std::string, std::string> &Str_Common =pInstance->m_Str_Common;
+
+  // Initiation
+  Float_Common["InputTimeDiff"]= 0.f;
+  Float_Common["ReflectionTimeDiff"]= 0.f;
+
+  // Initiate direction
+  Str_Common["Direction_X"] = "Stop";
+  Str_Common["Direction_Y"] = "Stop";
+  return 0;
+}
+
+int Plug_Enemy_Ground_Tracker_DeInit(CPhysic_World* &pWorld, SDL_Event* &pEvt,
+                              double& dbTimeDiff, CPlugin* pInstance) {
+  printf("\033[1;33m[%s][%d] :x: DeInit \033[m\n",
+      __FUNCTION__,__LINE__);
+  return 0;
+}
 
 /**
  * @brief Enemy ground character
@@ -414,11 +447,6 @@ int Plug_Enemy_Ground_Tracker(CPhysic_World* &pWorld, SDL_Event* &pEvt,
 
 
   b2Body* pBody = pInstance->m_pBody;
-  // Initiate direction
-  if (Str_Common.find("Direction_X") == Str_Common.end())
-    Str_Common["Direction_X"] = "Stop";
-  if (Str_Common.find("Direction_Y") == Str_Common.end())
-    Str_Common["Direction_Y"] = "Stop";
 
   float fMass = pBody->GetMass();
   float fJumpImpulse = fMass * 5.0;
@@ -528,14 +556,38 @@ int Plug_Spawner(CPhysic_World* &pWorld, SDL_Event* &pEvt,
 
   return 0;
 }
+int Plug_FPS_Drawer_Init(CPhysic_World* &pWorld, SDL_Event* &pEvt,
+                              double& dbTimeDiff, CPlugin* pInstance) {
+  printf("\033[1;33m[%s][%d] :x: Init \033[m\n",__FUNCTION__,__LINE__);
+
+  std::map<std::string, float> & Float_Common = pInstance->m_Float_Common;
+  std::map<std::string, void*> & Ptr_Common = pInstance->m_Ptr_Common;
+  Float_Common["DisplayTimeDiff"] = 0;
+  Ptr_Common["TxtSurface"] = nullptr;
+  Ptr_Common["TxtTexture"] = nullptr;
+  return 0;
+}
+int Plug_FPS_Drawer_DeInit(CPhysic_World* &pWorld, SDL_Event* &pEvt,
+                              double& dbTimeDiff, CPlugin* pInstance) {
+  std::map<std::string, void*> & Ptr_Common = pInstance->m_Ptr_Common;
+
+  if (Ptr_Common["TxtSurface"]) 
+    SDL_DestroyTexture ((SDL_Texture*)Ptr_Common["TxtSurface"]);
+  if (Ptr_Common["TxtTexture"]) 
+    SDL_FreeSurface((SDL_Surface*)Ptr_Common["TxtTexture"]);
+
+  printf("\033[1;33m[%s][%d] :x: DeInit \033[m\n",__FUNCTION__,__LINE__);
+  return 0;
+}
 
 int Plug_FPS_Drawer(CPhysic_World* &pWorld, SDL_Event* &pEvt,
                               double& dbTimeDiff, CPlugin* pInstance) {
   std::map<std::string, float> & Float_Common = pInstance->m_Float_Common;
+  std::map<std::string, void*> & Ptr_Common = pInstance->m_Ptr_Common;
   float fDisplayRate_SEC = .05f;
 
-  static SDL_Surface* pTxtSurface = nullptr;
-  static SDL_Texture* pTxtTexture = nullptr;
+  static SDL_Surface*& pTxtSurface = (SDL_Surface*&)Ptr_Common["TxtSurface"];
+  static SDL_Texture*& pTxtTexture = (SDL_Texture*&)Ptr_Common["TxtTexture"];
 
   std::shared_ptr<CApp> pApp =Get_pApp();
   SDL_Renderer* pRenderer = Get_pApp()->m_pRenderer;

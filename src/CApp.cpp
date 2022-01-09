@@ -146,7 +146,8 @@ int CApp::OnExecute(SDL_Renderer* pRenderer) {
   SDL_Event* pEvt=nullptr;
 
   double dbActualFPS = 0.0f;
-  double dbTimeDiff;
+  double dbTimeDiff = 0;
+
   //int iCnt=0;
   if (SDL_SetRenderDrawColor(pRenderer, 255, 0, 0, SDL_ALPHA_OPAQUE)) {
     printf("\033[1;31m[%s][%d] :x: Err \033[m\n",__FUNCTION__,__LINE__);
@@ -167,6 +168,8 @@ int CApp::OnExecute(SDL_Renderer* pRenderer) {
   SDL_Rect rectScreen3 ={iSizeW,iSizeH,iSizeW,iSizeH};
 #endif // :x: for test
 
+  // Init Plugins
+  Init_Plugins(m_pWorld,m_vecPluginInstance);
   while (!bQuit) {
 
 
@@ -256,6 +259,8 @@ int CApp::OnExecute(SDL_Renderer* pRenderer) {
 
 
   }
+  // Init Plugins
+  DeInit_Plugins(m_pWorld,m_vecPluginInstance);
 
   return 0;
 }
@@ -372,7 +377,7 @@ int CApp::Create_World(TMX_Ctx &TMX_context,
   if (m_pWorld) {
     delete m_pWorld;
   }
-  m_pWorld = new CPhysic_World(TMX_context);
+  m_pWorld = new CPhysic_World(TMX_context,mapObjs);
 
   // Register Plugins
   Register_Plugins();
@@ -495,6 +500,28 @@ int CApp::Set_vecPluginToRemove(CPlugin *pPlugin)  {
   return 0;
 }
 
+int CApp::Init_Plugins(CPhysic_World* pWorld, 
+                       std::vector<CPlugin*> & vecPluginInstance) {
+  SDL_Event* pEvt = nullptr;
+  double dbTimeDiff = 0;
+  for (auto item : vecPluginInstance) {
+    if (item->OnDeInit != nullptr) {
+      item->OnInit(pWorld,pEvt,dbTimeDiff,item);
+    }
+  }
+  return 0;
+}
+int CApp::DeInit_Plugins(CPhysic_World* pWorld, 
+                       std::vector<CPlugin*> & vecPluginInstance) {
+  SDL_Event* pEvt = nullptr;
+  double dbTimeDiff = 0;
+  for (auto item : vecPluginInstance) {
+    if (item->OnDeInit != nullptr) {
+      item->OnDeInit(pWorld,pEvt,dbTimeDiff,item);
+    }
+  }
+  return 0;
+}
 double g_dbActualFPS =0.0f;
 double Get_FPS() {
   return g_dbActualFPS;
@@ -503,4 +530,5 @@ void   Set_FPS(double dbActualFPS)
 {
   g_dbActualFPS = dbActualFPS;
 }
+
 

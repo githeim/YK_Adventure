@@ -19,6 +19,7 @@ public:
   std::map<std::string, float> m_Float_Common;
   std::map<std::string, std::string> m_Str_Common;
   std::map<std::string, int> m_Int_Common;
+  std::map<std::string, void*> m_Ptr_Common;
 };
 
 
