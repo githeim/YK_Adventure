@@ -540,12 +540,13 @@ int Plug_Spawner(CPhysic_World* &pWorld, SDL_Event* &pEvt,
     Int_Common["SpawnCount"] ++;
 
     if (Int_Common["SpawnCount"] < Int_Common["SpawnLimit"]) {
+      std::shared_ptr<CApp> pApp =Get_pApp();
       std::shared_ptr<TMX_Ctx> pTMX_Ctx =  Get_pTMX_Ctx();
-      pSpawnedBody = pWorld->Create_Element(*(pTMX_Ctx.get()),205,vec2CurPos.x+3,vec2CurPos.y-3);
+      pSpawnedBody = pWorld->Create_Element(
+          *(pTMX_Ctx.get()),205,vec2CurPos.x+3,vec2CurPos.y-3, pApp->m_mapObjs);
       auto pInstance = new CPlugin();
       pInstance->m_pBody = pSpawnedBody;
       pInstance->OnExecute = Plug_Enemy_Flyer;
-      std::shared_ptr<CApp> pApp =Get_pApp();
       pApp->Set_vecPluginToAdd(pInstance);
 
       printf("\033[1;33m[%s][%d] :x: Spawn \033[m\n",__FUNCTION__,__LINE__);

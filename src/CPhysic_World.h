@@ -30,7 +30,10 @@ public:
   int Create_BodyDefs(std::map<std::string,b2BodyDef*>& mapBodyDef);
   int Create_EdgeShapes(std::map<std::string,b2EdgeShape*>&  mapEdgeshape);
   int Create_PolygonShape(std::map<std::string,b2PolygonShape*>& mapPolygonShape);
-  b2Body* Create_Element(TMX_Ctx & TMX_context,int iTileIdx,float fX_M,float fY_M);
+  b2Body* Create_Element(TMX_Ctx & TMX_context,int iTileIdx,
+                         float fX_M,float fY_M,
+                         std::map<std::string,ObjAttr_t>& mapObjs);
+
 
   int Destroy_World();
 

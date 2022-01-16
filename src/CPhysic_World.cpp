@@ -57,23 +57,17 @@ int CPhysic_World::Create_World(TMX_Ctx &TMX_context,
   m_pWorld = new b2World(gravity);
   m_pContactListener = new WorldContactListener(this);
   m_pWorld->SetContactListener(m_pContactListener);
-
   // Create body define
   Create_BodyDefs(m_mapBodyDef);
-
-
   // Create edge shape
   Create_EdgeShapes(m_mapEdgeshape);
-
+  // Create polygon shape
   Create_PolygonShape(m_mapPolygonShape);
-
 
   float fLeftEdge_M;
   float fTopEdge_M;
   int iIdxCnt=0;
-
   // 기본 타일 사이즈 (18 pixel = 1M)
-  
   // 기본 타일 사이즈 pixel
   float fBaseTileWidth = (float)TMX_context.iTileWidth;
   float fBaseTileHeight =(float)TMX_context.iTileHeight;
@@ -107,6 +101,8 @@ int CPhysic_World::Create_World(TMX_Ctx &TMX_context,
         fTileSizeWidth_M  = (float)std::get<2>(Tile_XYWH_size)/fBaseTileWidth;
         fTileSizeHeight_M = (float)std::get<3>(Tile_XYWH_size)/fBaseTileHeight;
       }
+      // to remove compile warning
+      fTileSizeWidth_M = fTileSizeWidth_M;
 
       // X,Y coordination in Index
       int iX_idx= iIdxCnt % Layer.iWidth;
@@ -119,22 +115,13 @@ int CPhysic_World::Create_World(TMX_Ctx &TMX_context,
         + ((fTileSizeHeight_M /2)-(fTileSizeHeight_M/2));
       if (iIdx !=0) {
         Create_Element(TMX_context, iIdx,
-            fX_M,fY_M);
+            fX_M,fY_M,mapObjs);
       }
 
       iIdxCnt++;
     } 
 
   }
-#if 0 // :x: for test big ground
-  b2Body* pBody =m_pWorld->CreateBody(m_mapBodyDef["ground_tile"]);
-  b2PolygonShape* pPolygon = new b2PolygonShape();
-  pPolygon->SetAsBox(30/2.f, 2/2.f);
-
-  pBody->CreateFixture(pPolygon,0.f);
-  pBody->SetTransform(b2Vec2(0,5),0.f); 
-  m_mapBodies[pBody] = std::tuple<int,float,float>(123,30,2);
-#endif // :x: for test
 
   for (auto item : m_mapTags) {
     for (auto pBody : item.second) {
@@ -174,7 +161,8 @@ void CPhysic_World::SpinWorld(double dbTimeStep,
   return;
 }
 b2Body* CPhysic_World::Create_Element(TMX_Ctx &TMX_context, int iTileIdx,
-                                  float fX_M,float fY_M) {
+                                  float fX_M,float fY_M,
+                                  std::map<std::string,ObjAttr_t>& mapObjs) {
   std::string strPhysicType;
   // 기본 타일 사이즈 pixel
   float fBaseTileWidth = (float)TMX_context.iTileWidth;
@@ -198,9 +186,25 @@ b2Body* CPhysic_World::Create_Element(TMX_Ctx &TMX_context, int iTileIdx,
 
   if ( !CTMX_Reader::GetPhysicType(TMX_context,iTileIdx,strPhysicType)) {
     if (strPhysicType == "Background") {
+      std::string strTag;
+      static int iCnt = 0;
+      iCnt++;
       m_vecBackground.push_back(
           std::tuple<int, float,float,float,float,float>(
             iTileIdx,fX_M,fY_M,1.33,1.33,0));
+      char pBuf[256]={}; 
+      sprintf(pBuf,"%s_%03.2f_%03.2f",strPhysicType.c_str(),fX_M,fY_M);
+
+      printf("\033[1;33m[%s][%d] :x: chk %s %d %d %f %f\033[m\n",__FUNCTION__,__LINE__,pBuf,iCnt,iTileIdx,fX_M,fY_M);
+      mapObjs[pBuf].pBody = nullptr;
+      if (!CTMX_Reader::GetTag(TMX_context, iTileIdx, strTag)) {
+        printf("\033[1;32m[%s][%d] :x: Tag %s \033[m\n",__FUNCTION__,__LINE__,strTag.c_str());
+        mapObjs[pBuf].vecTag.push_back(strTag); 
+      }
+      mapObjs[pBuf].pPlugin=nullptr;
+//      mapObjs[pBuf].StaticTileInfo = {iTileIdx,fX_M,fY_M,1.33,1.33,0};
+      mapObjs[pBuf].StaticTileInfo={iTileIdx,fX_M,fY_M,1.33,1.33,0};
+      mapObjs[pBuf].piTileIdx = &mapObjs[pBuf].StaticTileInfo.iTileIdx;
     }
 
     if (strPhysicType == "Dynamic") {
@@ -253,7 +257,6 @@ b2Body* CPhysic_World::Create_Element(TMX_Ctx &TMX_context, int iTileIdx,
       pBody->SetTransform(b2Vec2(fX_M,fY_M),0.f); 
       m_mapBodies[pBody] = std::tuple<int,float,float>(iTileIdx,1.0f,1.0f);
     }
-
   }
 
   return pBody;

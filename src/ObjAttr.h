@@ -1,6 +1,5 @@
 #ifndef _OBJ_ATTR_H_
 #define _OBJ_ATTR_H_ 
-#include "CPhysic_World.h"
 
 class CPlugin;
 
@@ -11,14 +10,18 @@ typedef struct ObjAttr {
   CPlugin* pPlugin;
   // Static Tile Info
   //       tileidx   x     y     w     h    angle
-  std::tuple<int, float,float,float,float,float> StaticTileInfo;
+  //std::tuple<int, float,float,float,float,float> StaticTileInfo;
+  struct StaticTileInfo_t {
+    int iTileIdx;
+    float fX_M,fY_M,fW_M,fH_M,fAngle;
+  } StaticTileInfo;
   
-  int iTileIdx;
-  float *fX_M;
-  float *fY_M;
-  float *fW_M;
-  float *fH_M;
-  float *fAngle_M;
+  int   *piTileIdx;
+  float *pfX_M;
+  float *pfY_M;
+  float *pfW_M;
+  float *pfH_M;
+  float *pfAngle_M;
 
 } ObjAttr_t;
 #endif /* ifndef _OBJ_ATTR_H_ */
