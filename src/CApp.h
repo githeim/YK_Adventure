@@ -24,6 +24,7 @@ public:
       printf("\033[1;31m[%s][%d] :x: Err on Init \033[m\n",
           __FUNCTION__,__LINE__);
     }
+    m_vecObjPluginInstance.clear();
   };
   ~CApp() {
     printf("\033[1;33m[%s][%d] :x: chk \033[m\n",__FUNCTION__,__LINE__);
@@ -90,39 +91,58 @@ public:
                        CPhysic_World* pWorld, SDL_Renderer* pRenderer);
 
   int Create_World(TMX_Ctx &TMX_context,
-                   std::map<std::string,ObjAttr_t> &mapObjs);
+                   std::map<std::string,ObjAttr_t*> &mapObjs);
 
   int Spin_World(double &dbTimeDiff,CPhysic_World* pWorld);
 
-  int Execute_Plugins(CPhysic_World* pWorld,SDL_Event* pEvt,double dbTimeDiff,
-                      std::vector<CPlugin*> &vecPluginInstance);
-  int Remove_Plugins(CPhysic_World* pWorld,SDL_Event* pEvt,double dbTimeDiff,
-                     std::vector<CPlugin*> &vecPluginToRemove,
-                     std::vector<CPlugin*> &vecPluginInstance);
-  int Add_Plugins(CPhysic_World* pWorld,SDL_Event* pEvt,double dbTimeDiff,
-                  std::vector<CPlugin*> &vecPluginToAdd,
-                  std::vector<CPlugin*> &vecPluginInstance);
-  int Init_Plugins(CPhysic_World* pWorld,
-                   std::vector<CPlugin*> & vecPluginInstance);
-  int DeInit_Plugins(CPhysic_World* pWorld,
-                   std::vector<CPlugin*> & vecPluginInstance);
+  int Execute_Plugins(CPhysic_World* pWorld,
+                      std::map<std::string,ObjAttr_t*> &mapObjs,
+                      SDL_Event* pEvt,double dbTimeDiff,
+                      std::vector<ObjAttr_t*> &vecObjPluginInstance);
+
+  int Remove_Objs(CPhysic_World* pWorld,
+                     std::map<std::string,ObjAttr_t*> &mapObjs,
+                     SDL_Event* pEvt,double dbTimeDiff,
+                     std::vector<ObjAttr_t*> &vecObjToRemove,
+                     std::vector<ObjAttr_t*> &vecObjPluginInstance
+      );
+
+  int Add_Objs(CPhysic_World* pWorld,std::map<std::string,ObjAttr_t*> &mapObjs,
+                  SDL_Event* pEvt,double dbTimeDiff,
+                  std::vector<ObjAttr_t*> &vecObjToAdd,
+                  std::vector<ObjAttr_t*> &vecObjPluginInstance
+                  );
 
 
 
+  
 
-  int Set_vecPluginToAdd(CPlugin* pPlugin);
-  int Set_vecPluginToRemove(CPlugin* pPlugin);
 
+  int Init_ObjPlugins(CPhysic_World* pWorld,
+      std::map<std::string,ObjAttr_t*> &mapObjs, 
+      std::vector<ObjAttr_t*> & vecObjPluginInstance) ;
+
+  int DeInit_ObjPlugins(CPhysic_World* pWorld,
+                        std::map<std::string,ObjAttr_t*> &mapObjs,
+                        std::vector<ObjAttr_t*> & vecObjPluginInstance);
+
+  int Set_vecObjToAdd(ObjAttr_t* pObj); 
+  int Set_vecObjToRemove(ObjAttr_t* pObj); 
 
 
   int Register_Plugins();
   // Plugin Instances
-  std::vector<CPlugin*> m_vecPluginInstance;
+  std::vector<ObjAttr_t*> m_vecObjPluginInstance;
   std::vector<CPlugin*> m_vecPluginToAdd;
+  std::vector<ObjAttr_t*> m_vecObjPluginToAdd;
+
   std::vector<CPlugin*> m_vecPluginToRemove;
-  std::mutex m_mtxPluginToAdd;
-  std::mutex m_mtxPluginToRemove;
+  std::vector<ObjAttr_t*> m_vecObjPluginToRemove;
+
   
+  std::mutex m_mtxObjPluginToAdd;
+  std::mutex m_mtxObjPluginToRemove;
+
 
   SDL_Window*   m_pWindow   = NULL;
   SDL_Renderer* m_pRenderer = NULL;
@@ -152,7 +172,7 @@ public:
   bool m_bStopFlag = false;
 
   // Objects in the App
-  std::map<std::string,ObjAttr_t> m_mapObjs;
+  std::map<std::string,ObjAttr_t*> m_mapObjs;
 };
 
 
