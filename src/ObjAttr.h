@@ -1,27 +1,54 @@
 #ifndef _OBJ_ATTR_H_
 #define _OBJ_ATTR_H_ 
 
+#include <functional>
 class CPlugin;
 
 // Application Object attribute
 typedef struct ObjAttr {
+  std::string strObjName;
+  // sprite idx
+  int iTileIdx; 
+
+  // Dynamic Tile info
   b2Body* pBody;
+
   std::vector<std::string> vecTag;
+  std::string strPhysicType;
   CPlugin* pPlugin;
+
   // Static Tile Info
-  //       tileidx   x     y     w     h    angle
-  //std::tuple<int, float,float,float,float,float> StaticTileInfo;
-  struct StaticTileInfo_t {
-    int iTileIdx;
+  struct TileInfo_t {
     float fX_M,fY_M,fW_M,fH_M,fAngle;
-  } StaticTileInfo;
+  } TileInfo;
   
-  int   *piTileIdx;
-  float *pfX_M;
-  float *pfY_M;
-  float *pfW_M;
-  float *pfH_M;
-  float *pfAngle_M;
+  // For background tiles
+  float GetStaticTile_fX_M()  { return TileInfo.fX_M;}
+  float GetStaticTile_fY_M()  { return TileInfo.fY_M;}
+  float GetStaticTile_fAngle(){ return TileInfo.fAngle;}
+
+  // For Dynamic tiles
+  float GetBody_fX_M()  { return pBody->GetPosition().x;}
+  float GetBody_fY_M()  { return pBody->GetPosition().y;}
+  float GetBody_fAngle(){ return pBody->GetAngle();}
+ 
+  float GetTile_fW_M()  { return TileInfo.fW_M;}
+  float GetTile_fH_M()  { return TileInfo.fH_M;}
+
+  std::function<float()> fX_M  ;
+  std::function<float()> fY_M  ;
+  std::function<float()> fW_M  ;
+  std::function<float()> fH_M  ;
+  std::function<float()> fAngle;
 
 } ObjAttr_t;
+
+class CObjDirectory {
+  public:
+
+  bool Find_by_Name(std::string strObjName, ObjAttr_t* pObj);
+  bool Find_by_Tag(std::string strTag,std::vector<ObjAttr_t*> pvecObj);
+  bool Find_by_Body(b2Body* pBody,ObjAttr_t* pObj);
+  std::map<std::string,ObjAttr_t*> m_mapObjs;
+};
 #endif /* ifndef _OBJ_ATTR_H_ */

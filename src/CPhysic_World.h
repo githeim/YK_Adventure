@@ -9,7 +9,7 @@
 class WorldContactListener;
 class CPhysic_World {
 public:
-  CPhysic_World(TMX_Ctx & TMX_context, std::map<std::string,ObjAttr_t>& mapObjs,
+  CPhysic_World(TMX_Ctx & TMX_context, std::map<std::string,ObjAttr_t*>& mapObjs,
       float fWorldScale_Pixel_per_Meter=18.f) {
     m_fScale_Pixel_per_Meter = fWorldScale_Pixel_per_Meter;
     if ( Create_World(TMX_context,mapObjs)) {
@@ -25,15 +25,30 @@ public:
   }
 
   int Create_World(TMX_Ctx & TMX_context,
-                   std::map<std::string,ObjAttr_t>& mapObjs); 
+                   std::map<std::string,ObjAttr_t*>& mapObjs); 
 
   int Create_BodyDefs(std::map<std::string,b2BodyDef*>& mapBodyDef);
   int Create_EdgeShapes(std::map<std::string,b2EdgeShape*>&  mapEdgeshape);
   int Create_PolygonShape(std::map<std::string,b2PolygonShape*>& mapPolygonShape);
-  b2Body* Create_Element(TMX_Ctx & TMX_context,int iTileIdx,
+  std::string Create_Element(TMX_Ctx & TMX_context,int iTileIdx,
                          float fX_M,float fY_M,
-                         std::map<std::string,ObjAttr_t>& mapObjs);
+                         std::map<std::string,ObjAttr_t*>& mapObjs);
 
+  int Register_Background(std::map<std::string,ObjAttr_t*>& mapObjs,
+                          std::string &strObjName,
+                          std::string &strTag, std::string &strPhysicType,
+                          int &iTileIdx,
+                          float &fX_M,float &fY_M,float &fW_M,float &fH_M,
+                          float &fAngle);
+  int Register_Obj(std::map<std::string,ObjAttr_t*>& mapObjs,
+                   std::string &strObjName,
+                   b2Body* pBody,
+                   std::vector<std::string> &vecTag, std::string &strPhysicType,
+                   int &iTileIdx,
+                   float &fW_M,float &fH_M,
+                   float &fAngle,
+                   std::map<std::string,std::vector<ObjAttr_t*>> &mapTagObj
+                   );
 
   int Destroy_World();
 
@@ -50,9 +65,15 @@ public:
   std::map<std::string,b2PolygonShape*> m_mapPolygonShape;
   std::map<std::string,b2EdgeShape*>    m_mapEdgeshape;
 
+           // Tag          body
   std::map<std::string,std::vector<b2Body*>> m_mapTags;
+  // Map variable that is mapping tag - Objects
+           // Tag          Object
+  std::map<std::string,std::vector<ObjAttr_t*>> m_mapTagObj;
+
   float m_fScale_Pixel_per_Meter;
   WorldContactListener* m_pContactListener = nullptr;
+  int m_iObjCnt =0;
 };
 
 #endif /* ifndef _CPHYSIC_WORLD_H_ */

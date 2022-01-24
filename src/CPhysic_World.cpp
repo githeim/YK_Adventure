@@ -52,7 +52,7 @@ public:
   CPhysic_World* m_pPhysic_World;
 };
 int CPhysic_World::Create_World(TMX_Ctx &TMX_context,
-                                std::map<std::string,ObjAttr_t>& mapObjs) {
+                                std::map<std::string,ObjAttr_t*>& mapObjs) {
   b2Vec2 gravity(0.0f,-10.0f);
   m_pWorld = new b2World(gravity);
   m_pContactListener = new WorldContactListener(this);
@@ -160,15 +160,28 @@ void CPhysic_World::SpinWorld(double dbTimeStep,
   m_pWorld->Step(dbTimeStep, iVelocityIter, iPositionIter);
   return;
 }
-b2Body* CPhysic_World::Create_Element(TMX_Ctx &TMX_context, int iTileIdx,
+
+/**
+ * @brief create Objects map 
+ *
+ * @param TMX_context[IN]
+ * @param iTileIdx[IN]
+ * @param fX_M[IN]
+ * @param fY_M[IN]
+ * @param mapObjs[OUT]
+ *
+ * @return created object's name 
+ */
+std::string CPhysic_World::Create_Element(TMX_Ctx &TMX_context, int iTileIdx,
                                   float fX_M,float fY_M,
-                                  std::map<std::string,ObjAttr_t>& mapObjs) {
+                                  std::map<std::string,ObjAttr_t*>& mapObjs) {
   std::string strPhysicType;
   // 기본 타일 사이즈 pixel
   float fBaseTileWidth = (float)TMX_context.iTileWidth;
   float fBaseTileHeight =(float)TMX_context.iTileHeight;
 
   b2Body* pBody = nullptr;
+  std::string strObjName="";
   TileSet *pTileSet;
   int iFirstgid;
   CTMX_Reader::GetTileSetFromIdx(TMX_context,iTileIdx,pTileSet,iFirstgid);
@@ -186,7 +199,7 @@ b2Body* CPhysic_World::Create_Element(TMX_Ctx &TMX_context, int iTileIdx,
 
   if ( !CTMX_Reader::GetPhysicType(TMX_context,iTileIdx,strPhysicType)) {
     if (strPhysicType == "Background") {
-      std::string strTag;
+      std::string strTag="";
       static int iCnt = 0;
       iCnt++;
       m_vecBackground.push_back(
@@ -194,26 +207,35 @@ b2Body* CPhysic_World::Create_Element(TMX_Ctx &TMX_context, int iTileIdx,
             iTileIdx,fX_M,fY_M,1.33,1.33,0));
       char pBuf[256]={}; 
       sprintf(pBuf,"%s_%03.2f_%03.2f",strPhysicType.c_str(),fX_M,fY_M);
-
-      printf("\033[1;33m[%s][%d] :x: chk %s %d %d %f %f\033[m\n",__FUNCTION__,__LINE__,pBuf,iCnt,iTileIdx,fX_M,fY_M);
-      mapObjs[pBuf].pBody = nullptr;
+      strObjName = pBuf;
       if (!CTMX_Reader::GetTag(TMX_context, iTileIdx, strTag)) {
-        printf("\033[1;32m[%s][%d] :x: Tag %s \033[m\n",__FUNCTION__,__LINE__,strTag.c_str());
-        mapObjs[pBuf].vecTag.push_back(strTag); 
+        printf("\033[1;32m[%s][%d] :x: Tag %s \033[m\n",
+            __FUNCTION__,__LINE__,strTag.c_str());
       }
-      mapObjs[pBuf].pPlugin=nullptr;
-//      mapObjs[pBuf].StaticTileInfo = {iTileIdx,fX_M,fY_M,1.33,1.33,0};
-      mapObjs[pBuf].StaticTileInfo={iTileIdx,fX_M,fY_M,1.33,1.33,0};
-      mapObjs[pBuf].piTileIdx = &mapObjs[pBuf].StaticTileInfo.iTileIdx;
+      // background tile is 1.33M x 1.33M
+      float fW_M=1.33, fH_M=1.33,fAngle =0;
+      Register_Background(mapObjs,
+                          strObjName,strTag,strPhysicType,
+                          iTileIdx,fX_M,fY_M,fW_M,fH_M,fAngle);
     }
 
     if (strPhysicType == "Dynamic") {
+      m_iObjCnt++;
+
+      float fAngle =0;
       pBody = m_pWorld->CreateBody(m_mapBodyDef["dynamic_tile"]);
       std::string strTag;
+      std::vector<std::string> vecTag;
+      vecTag.clear();
       if (!CTMX_Reader::GetTag(TMX_context, iTileIdx, strTag)) {
         printf("\033[1;32m[%s][%d] :x: Tag %s \033[m\n",__FUNCTION__,__LINE__,strTag.c_str());
         m_mapTags[strTag].push_back(pBody); 
+        vecTag.push_back(strTag);
       }
+      char pBuf[256]={}; 
+      sprintf(pBuf,"%s_%s_%05d",strPhysicType.c_str(),strTag.c_str(),m_iObjCnt);
+      strObjName = pBuf;
+
       // Find the matched size of polygon
       auto Polygon = std::find_if(m_mapPolygonShape.begin(),m_mapPolygonShape.end(),
           [&fTileSizeWidth_M,&fTileSizeHeight_M](auto item) {
@@ -244,8 +266,21 @@ b2Body* CPhysic_World::Create_Element(TMX_Ctx &TMX_context, int iTileIdx,
       pBody->SetTransform(b2Vec2(fX_M,fY_M),0.f); 
       m_mapBodies[pBody] = std::tuple<int,float,float>(
           iTileIdx,fTileSizeWidth_M,fTileSizeHeight_M);
+      Register_Obj(mapObjs,strObjName,pBody,vecTag,strPhysicType,
+                   iTileIdx,fTileSizeWidth_M,fTileSizeHeight_M,fAngle,
+                   m_mapTagObj);
+
     }
     else if (strPhysicType == "Ground") {
+      char pBuf[256]={}; 
+      sprintf(pBuf,"%s_%03.2f_%03.2f",strPhysicType.c_str(),fX_M,fY_M);
+      strObjName = pBuf;
+      std::vector<std::string> vecTag;
+      vecTag.clear();
+      float fGroundTile_W_M=1.0;
+      float fGroundTile_H_M=1.0;
+      float fGroundTile_Angle=.0;
+
       //printf("\033[1;33m[%s][%d] :x: Ground \033[m\n",__FUNCTION__,__LINE__);
       b2Body* pBody =m_pWorld->CreateBody(m_mapBodyDef["ground_tile"]);
       // :x: using edge shape for tile structure
@@ -256,10 +291,13 @@ b2Body* CPhysic_World::Create_Element(TMX_Ctx &TMX_context, int iTileIdx,
 
       pBody->SetTransform(b2Vec2(fX_M,fY_M),0.f); 
       m_mapBodies[pBody] = std::tuple<int,float,float>(iTileIdx,1.0f,1.0f);
+      Register_Obj(mapObjs, strObjName, pBody, vecTag, strPhysicType, iTileIdx, 
+          fGroundTile_W_M, fGroundTile_H_M, fGroundTile_Angle,m_mapTagObj);
     }
   }
 
-  return pBody;
+
+  return strObjName;
 }
 
 int CPhysic_World::Create_BodyDefs(std::map<std::string,b2BodyDef*> &mapBodyDef) {
@@ -308,5 +346,86 @@ int CPhysic_World::Create_PolygonShape(
   pCharacter_Box->SetAsBox(float(24.f/2.f/m_fScale_Pixel_per_Meter),
                            float(24.f/2.f/m_fScale_Pixel_per_Meter));
   mapPolygonShape["Character_Box"] = pCharacter_Box;
+  return 0;
+}
+int CPhysic_World::Register_Background(std::map<std::string, ObjAttr_t*> &mapObjs,
+    std::string &strObjName,
+    std::string &strTag, std::string &strPhysicType, int &iTileIdx, 
+    float &fX_M, float &fY_M, float &fW_M, float &fH_M, float &fAngle) {
+  mapObjs[strObjName] = new ObjAttr_t;
+  mapObjs[strObjName]->strObjName = strObjName;
+  mapObjs[strObjName]->iTileIdx = iTileIdx;
+  mapObjs[strObjName]->pBody = nullptr;
+  if (strTag != "") {
+    mapObjs[strObjName]->vecTag.clear(); 
+    mapObjs[strObjName]->vecTag.push_back(strTag); 
+  }
+  mapObjs[strObjName]->strPhysicType = strPhysicType;
+  mapObjs[strObjName]->pPlugin=nullptr;
+  mapObjs[strObjName]->TileInfo={fX_M,fY_M,1.33,1.33,0};
+
+  // Set getter functions
+  mapObjs[strObjName]->fX_M   = std::bind(&ObjAttr_t::GetStaticTile_fX_M,mapObjs[strObjName]);
+  mapObjs[strObjName]->fY_M   = std::bind(&ObjAttr_t::GetStaticTile_fY_M,mapObjs[strObjName]);
+  mapObjs[strObjName]->fW_M   = std::bind(&ObjAttr_t::GetTile_fW_M,mapObjs[strObjName]);
+  mapObjs[strObjName]->fH_M   = std::bind(&ObjAttr_t::GetTile_fH_M,mapObjs[strObjName]);
+  mapObjs[strObjName]->fAngle = std::bind(&ObjAttr_t::GetStaticTile_fAngle,mapObjs[strObjName]);
+#if 0 // :x: for test
+  printf("\033[1;33m[%s][%d] :x: [Background Tiles] %s  %d %f,%f,%f,%f,%f \033[m\n",
+      __FUNCTION__,__LINE__,
+      strObjName.c_str(),iTileIdx,
+      mapObjs[strObjName]->fX_M(),
+      mapObjs[strObjName]->fY_M(),
+      mapObjs[strObjName]->fW_M(),
+      mapObjs[strObjName]->fH_M(),  
+      mapObjs[strObjName]->fAngle()
+      );
+#endif // :x: for test
+  return 0;
+}
+int CPhysic_World::Register_Obj(std::map<std::string, ObjAttr_t*> &mapObjs, 
+    std::string &strObjName, b2Body *pBody, std::vector<std::string> &vecTag, 
+    std::string &strPhysicType,  
+    int &iTileIdx, 
+    float &fW_M, float &fH_M, float &fAngle,
+    std::map<std::string,std::vector<ObjAttr_t*>> &mapTagObj
+ )
+{
+  mapObjs[strObjName] = new ObjAttr_t;
+  mapObjs[strObjName]->strObjName = strObjName;
+  mapObjs[strObjName]->iTileIdx = iTileIdx;
+  mapObjs[strObjName]->pBody = pBody;
+  mapObjs[strObjName]->vecTag.clear();
+  if (vecTag.size() !=0) {
+    for (auto Tag : vecTag) {
+      mapObjs[strObjName]->vecTag.push_back(Tag);
+    }
+  }
+  mapObjs[strObjName]->strPhysicType = strPhysicType;
+  mapObjs[strObjName]->pPlugin=nullptr;
+  mapObjs[strObjName]->TileInfo={0,0,fW_M,fH_M,fAngle};
+
+  // Set getter functions
+  mapObjs[strObjName]->fX_M   = std::bind(&ObjAttr_t::GetBody_fX_M,mapObjs[strObjName]);
+  mapObjs[strObjName]->fY_M   = std::bind(&ObjAttr_t::GetBody_fY_M,mapObjs[strObjName]);
+  mapObjs[strObjName]->fW_M   = std::bind(&ObjAttr_t::GetTile_fW_M,mapObjs[strObjName]);
+  mapObjs[strObjName]->fH_M   = std::bind(&ObjAttr_t::GetTile_fH_M,mapObjs[strObjName]);
+  mapObjs[strObjName]->fAngle = std::bind(&ObjAttr_t::GetBody_fAngle,mapObjs[strObjName]);
+#if 0 // :x: for test
+  printf("\033[1;33m[%s][%d] :x: [Obj Tiles] %s  %d %f,%f,%f,%f,%f \033[m\n",
+      __FUNCTION__,__LINE__,
+      strObjName.c_str(),iTileIdx,
+      mapObjs[strObjName].fX_M(),
+      mapObjs[strObjName].fY_M(),
+      mapObjs[strObjName].fW_M(),
+      mapObjs[strObjName].fH_M(),  
+      mapObjs[strObjName].fAngle()
+      );
+#endif // :x: for test
+
+  for (auto strTag : vecTag) {
+    m_mapTagObj[strTag].push_back(mapObjs[strObjName]);
+  }
+    
   return 0;
 }

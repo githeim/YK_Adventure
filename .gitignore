@@ -1,0 +1,8 @@
+build/*
+compile_commands.json
+
+# vim swap files
+*.swn
+*.swp
+*.swo
+

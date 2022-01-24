@@ -41,13 +41,66 @@ int CreatePlugins_byTagMap(std::map<std::string,std::vector<b2Body*>> &mapTags,
         pInstance->OnExecute = Plug_Spawner;
       }
       vecPluginInstance.push_back(pInstance);
+    }
+  }
+  return 0;
+}
 
+int CreatePlugins_byObjMap(std::map<std::string,ObjAttr_t*> mapObjs,
+                  std::vector<ObjAttr_t*> &vecObjPluginInstance)
+{
+  for (auto Item : mapObjs) {
+    const std::string &strObjName = Item.first;
+    ObjAttr_t* &pObj = Item.second;
+    if (pObj->vecTag.size() ==0) 
+      continue;
+    CPlugin* pInstance = nullptr;
+
+    for (auto strTag : pObj->vecTag) {
+      printf("\033[1;33m[%s][%d] :x: Tag %s \033[m\n",__FUNCTION__,__LINE__,strTag.c_str());
+
+      if (strTag == "Player01") {
+        pInstance = new CPlugin();
+        pInstance->m_pBody = pObj->pBody;
+        printf("\033[1;33m[%s][%d] :x: player1 instance [%s]\033[m\n",
+            __FUNCTION__,__LINE__,strObjName.c_str());
+        pInstance->OnExecute = Plug_Player01;
+      } else if (strTag == "Enemy_Ground_Tracker") {
+        pInstance = new CPlugin();
+        pInstance->m_pBody = pObj->pBody;
+        printf("\033[1;33m[%s][%d] :x: Enemy_Ground_Tracker instance [%s]\033[m\n",
+            __FUNCTION__,__LINE__,strObjName.c_str());
+        pInstance->OnExecute = Plug_Enemy_Ground_Tracker;
+        pInstance->OnInit = Plug_Enemy_Ground_Tracker_Init;
+        pInstance->OnDeInit = Plug_Enemy_Ground_Tracker_DeInit;
+
+      } else if (strTag == "Enemy_Flyer") {
+        pInstance = new CPlugin();
+        pInstance->m_pBody = pObj->pBody;
+        printf("\033[1;33m[%s][%d] :x: Enemy_Ground_Tracker instance [%s]\033[m\n",
+            __FUNCTION__,__LINE__,strObjName.c_str());
+        pInstance->OnExecute = Plug_Enemy_Flyer;
+        pInstance->OnInit = Plug_Enemy_Flyer_Init;
+        pInstance->OnDeInit = Plug_Enemy_Flyer_DeInit;
+      }
+      else if (strTag == "Enemy_Spawner") {
+        pInstance = new CPlugin();
+        pInstance->m_pBody = pObj->pBody;
+        printf("\033[1;33m[%s][%d] :x: Enemy_Spawner instance [%s]\033[m\n",
+            __FUNCTION__,__LINE__,strObjName.c_str());
+        pInstance->OnExecute = Plug_Spawner;
+      }
     }
 
+    if (pInstance != nullptr) {
+      mapObjs[strObjName]->pPlugin=pInstance;
+      vecObjPluginInstance.push_back(mapObjs[strObjName]);
+    }
 
   }
   return 0;
 }
+
 int CreatePlugin()
 {
   return 0;

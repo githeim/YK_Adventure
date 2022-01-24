@@ -50,8 +50,8 @@ int CApp::DeInit(
   }
   SDL_DestroyTexture(m_pVectorBoxTexture);
 
-  for (auto pInstance : m_vecPluginInstance) {
-    delete pInstance;
+  for (auto Obj : m_mapObjs) {
+    delete Obj.second;
   }
   
   // Clear Physic World
@@ -158,7 +158,6 @@ int CApp::OnExecute(SDL_Renderer* pRenderer) {
     bQuit = true;
   }
 
-  
 #if 0 // :x: for test
   int iSizeW = SCREEN_WIDTH/2;
   int iSizeH = SCREEN_HEIGHT/2;
@@ -169,9 +168,9 @@ int CApp::OnExecute(SDL_Renderer* pRenderer) {
 #endif // :x: for test
 
   // Init Plugins
-  Init_Plugins(m_pWorld,m_vecPluginInstance);
+  //Init_Plugins(m_pWorld,m_mapObjs,m_vecPluginInstance);
+  Init_ObjPlugins(m_pWorld,m_mapObjs,m_vecObjPluginInstance);
   while (!bQuit) {
-
 
     Draw_World(m_pWorld);
     
@@ -238,11 +237,16 @@ int CApp::OnExecute(SDL_Renderer* pRenderer) {
 
       pEvt= &Evt;
     }
-    Execute_Plugins(m_pWorld,pEvt,dbTimeDiff,m_vecPluginInstance);
-    Add_Plugins(m_pWorld,pEvt,dbTimeDiff, 
-                m_vecPluginToAdd, m_vecPluginInstance);
-    Remove_Plugins(m_pWorld,pEvt,dbTimeDiff, 
-                   m_vecPluginToAdd, m_vecPluginInstance);
+    //Execute_Plugins(m_pWorld,pEvt,dbTimeDiff,m_vecPluginInstance);
+    Execute_Plugins(m_pWorld,m_mapObjs,pEvt,dbTimeDiff,m_vecObjPluginInstance);
+    Add_Objs(m_pWorld,m_mapObjs,pEvt,dbTimeDiff, m_vecObjPluginToAdd, m_vecObjPluginInstance);
+    Remove_Objs(m_pWorld,m_mapObjs,pEvt,dbTimeDiff, m_vecObjPluginToRemove,m_vecObjPluginInstance);
+#if 0 // :x: for test
+    Add_Plugins(m_pWorld,m_mapObjs,pEvt,dbTimeDiff, 
+                m_vecPluginToAdd, m_vecPluginInstance,m_vecObjPluginInstance);
+    Remove_Plugins(m_pWorld,m_mapObjs,pEvt,dbTimeDiff, 
+                   m_vecPluginToAdd, m_vecPluginInstance,m_vecObjPluginInstance);
+#endif // :x: for test
 
     dbActualFPS = Frame_Rate_Control(SCREEN_FPS,dbTimeDiff);
     Set_FPS(dbActualFPS);
@@ -259,8 +263,8 @@ int CApp::OnExecute(SDL_Renderer* pRenderer) {
 
 
   }
-  // Init Plugins
-  DeInit_Plugins(m_pWorld,m_vecPluginInstance);
+  // DeInit Objs' Plugins
+  DeInit_ObjPlugins(m_pWorld,m_mapObjs,m_vecObjPluginInstance);
 
   return 0;
 }
@@ -371,7 +375,7 @@ int CApp::Draw_Point_Scale(float fX_M,float fY_M) {
 
 
 int CApp::Create_World(TMX_Ctx &TMX_context,
-                       std::map<std::string,ObjAttr> &mapObjs) 
+                       std::map<std::string,ObjAttr*> &mapObjs) 
 {
   m_mapObjs.clear();
   if (m_pWorld) {
@@ -386,47 +390,30 @@ int CApp::Create_World(TMX_Ctx &TMX_context,
 }
 
 int CApp::Draw_World(CPhysic_World* pWorld,SDL_Renderer* pRenderer) {
-  std::map<b2Body*,std::tuple<int,float,float>> &mapBodies = pWorld->m_mapBodies;
-  std::vector<std::tuple<int, float,float,float,float,float>> &vecBackground = 
-                                                      pWorld-> m_vecBackground;
+
 
   float fScale_Pixel_per_Meter = pWorld->m_fScale_Pixel_per_Meter;
 
   SDL_SetRenderTarget(m_pRenderer, m_mapDrawingTextures[0]);
   SDL_SetRenderDrawColor(m_pRenderer, 55, 55, 55, SDL_ALPHA_OPAQUE);
   SDL_RenderClear(m_pRenderer);
-  // Draw background
-  for (auto background : vecBackground) {
-    int   iIdx    = std::get<0>(background);
-    float fX_M    = std::get<1>(background);
-    float fY_M    = std::get<2>(background);
-    float fWidth  = std::get<3>(background);
-    float fHeight = std::get<4>(background);
-    float fAngle  = std::get<5>(background);
+  for (auto Item : m_mapObjs) {
+    ObjAttr_t& Obj = *Item.second;
+    int   iIdx    = Obj.iTileIdx;
+    float fX_M    = Obj.fX_M();
+    float fY_M    = Obj.fY_M();
+    float fWidth  = Obj.fW_M();
+    float fHeight = Obj.fH_M();
+    float fAngle  = Obj.fAngle();
 
     int iPixel_X = (int)((fX_M-fWidth/2.0f) *fScale_Pixel_per_Meter) +(SCREEN_WIDTH/2);
     int iPixel_Y = -(int)((fY_M+fHeight/2.0f) *fScale_Pixel_per_Meter)+(SCREEN_HEIGHT/2);
-
     // do not draw background's vector
-    if (m_bTileDraw == false)
+    if (Obj.strPhysicType=="Background" && m_bTileDraw == false)
       m_bVectorDraw = false;
     Draw_Sprite(iPixel_X, iPixel_Y, iIdx, fAngle);
-    if (m_bTileDraw == false)
+    if (Obj.strPhysicType=="Background" && m_bTileDraw == false)
       m_bVectorDraw = true;
-  }
-  // Draw bodies
-  for (auto body : mapBodies) {
-    int   iIdx    = std::get<0>(body.second);
-    float fWidth  = std::get<1>(body.second);
-    float fHeight = std::get<2>(body.second);
-
-    b2Body* pBody = body.first;
-    b2Vec2 vecPos = pBody->GetPosition();
-    float fAngle = pBody->GetAngle();
-
-    int iPixel_X = (int)((vecPos.x-fWidth/2.0f) *fScale_Pixel_per_Meter) +(SCREEN_WIDTH/2);
-    int iPixel_Y = -(int)((vecPos.y+fHeight/2.0f) *fScale_Pixel_per_Meter)+(SCREEN_HEIGHT/2);
-    Draw_Sprite(iPixel_X, iPixel_Y, iIdx, fAngle);
   }
   return 0;
 }
@@ -439,89 +426,127 @@ int CApp::Spin_World(double &dbTimeDiff, CPhysic_World *pWorld) {
 }
 
 int CApp::Register_Plugins(){
-  CreatePlugins_byTagMap(m_pWorld->m_mapTags,m_vecPluginInstance);
-  CreateGeneralPlugins(m_vecPluginInstance);
+  //CreatePlugins_byTagMap(m_pWorld->m_mapTags,m_vecPluginInstance);
+
+  CreatePlugins_byObjMap(m_mapObjs,m_vecObjPluginInstance);
+  //CreateGeneralPlugins(m_vecPluginInstance);
   return 0;
 }
-int CApp::Execute_Plugins(CPhysic_World* pWorld,SDL_Event* pEvt,double dbTimeDiff,
-                          std::vector<CPlugin*> &vecPluginInstance) {
-  for (auto pPlugin : vecPluginInstance) {
+
+int CApp::Execute_Plugins(CPhysic_World* pWorld,
+                          std::map<std::string,ObjAttr_t*> &mapObjs,
+                          SDL_Event* pEvt,double dbTimeDiff,
+                          std::vector<ObjAttr_t*> &vecObjPluginInstance) {
+  for (auto pObj : vecObjPluginInstance) {
+    CPlugin* &pPlugin = pObj->pPlugin;
     if (pPlugin->OnExecute != nullptr) {
-      pPlugin->OnExecute(pWorld,pEvt,dbTimeDiff,pPlugin);
+      pPlugin->OnExecute(pWorld,mapObjs,pEvt,dbTimeDiff,pPlugin);
     }
   }
 
   return 0;
 }
-int CApp::Add_Plugins(CPhysic_World* pWorld,SDL_Event* pEvt,double dbTimeDiff,
-                      std::vector<CPlugin*> &vecPluginToAdd,
-                      std::vector<CPlugin*> &vecPluginInstance) {
-  if (vecPluginToAdd.size() > 0) {
-    for (auto pPlugin : vecPluginToAdd) {
+
+
+int CApp::Add_Objs(CPhysic_World* pWorld,std::map<std::string,ObjAttr_t*> &mapObjs,
+    SDL_Event* pEvt,double dbTimeDiff,
+    std::vector<ObjAttr_t*> &vecObjToAdd,
+    std::vector<ObjAttr_t*> &vecObjPluginInstance
+    ){
+  if (vecObjToAdd.size() > 0) {
+    for (auto pObj : vecObjToAdd) {
+      CPlugin* &pPlugin = pObj->pPlugin;
       if (pPlugin->OnInit != nullptr) {
-        pPlugin->OnInit(pWorld,pEvt,dbTimeDiff,pPlugin);
+        pPlugin->OnInit(pWorld,m_mapObjs,pEvt,dbTimeDiff,pPlugin);
       }
-      vecPluginInstance.push_back(pPlugin);
+      vecObjPluginInstance.push_back(pObj);
     }
-  }
-  vecPluginToAdd.clear();
-  return 0;
-}
-int CApp::Remove_Plugins(CPhysic_World* pWorld,SDL_Event* pEvt,double dbTimeDiff,
-                         std::vector<CPlugin*> &vecPluginToRemove,
-                         std::vector<CPlugin*> &vecPluginInstance) {
-  if (vecPluginToRemove.size() > 0) {
-    for (auto pPlugin : vecPluginToRemove) {
-      if (pPlugin->OnDeInit != nullptr) {
-        pPlugin->OnDeInit(pWorld,pEvt,dbTimeDiff,pPlugin);
-      }
-      vecPluginInstance.erase( 
-          std::remove_if(vecPluginInstance.begin(), 
-            vecPluginInstance.end(), 
-            [pPlugin] (CPlugin* item) { return (pPlugin == item);}), 
-          vecPluginInstance.end());
-    }
-    vecPluginToRemove.clear();
+    vecObjToAdd.clear();
   }
   return 0;
 }
 
-int CApp::Set_vecPluginToAdd(CPlugin *pPlugin) {
-  m_mtxPluginToAdd.lock();
-  m_vecPluginToAdd.push_back(pPlugin);
-  m_mtxPluginToAdd.unlock();
+int CApp::Remove_Objs(CPhysic_World* pWorld,
+    std::map<std::string,ObjAttr_t*> &mapObjs,
+    SDL_Event* pEvt,double dbTimeDiff,
+    std::vector<ObjAttr_t*> &vecObjToRemove,
+    std::vector<ObjAttr_t*> &vecObjPluginInstance
+    ) {
+  if (vecObjToRemove.size() > 0) {
+    for (auto pObj : vecObjToRemove) {
+      CPlugin* &pPlugin = pObj->pPlugin;
+      if (pPlugin != nullptr) {
+        if (pPlugin->OnDeInit != nullptr) {
+          pPlugin->OnDeInit(pWorld,mapObjs,pEvt,dbTimeDiff,pPlugin);
+        }
+        vecObjPluginInstance.erase( 
+            std::remove_if(vecObjPluginInstance.begin(), 
+              vecObjPluginInstance.end(), 
+              [pObj] (ObjAttr_t* item) { return (pObj == item);}), 
+            vecObjPluginInstance.end());
+        printf("\033[1;31m[%s][%d] :x: chk %p \033[m\n",__FUNCTION__,__LINE__,pPlugin);
+
+        delete pPlugin;
+        pPlugin = nullptr;
+      }
+      mapObjs.erase(pObj->strObjName);
+      //delete pObj;
+      //pObj = nullptr;
+    }
+    vecObjToRemove.clear();
+  }
+
   return 0;
 }
 
-int CApp::Set_vecPluginToRemove(CPlugin *pPlugin)  {
-  m_mtxPluginToRemove.lock();
-  m_vecPluginToRemove.push_back(pPlugin);
-  m_mtxPluginToRemove.unlock();
+int CApp::Set_vecObjToAdd(ObjAttr_t* pObj) {
+  m_mtxObjPluginToAdd.lock();
+  m_vecObjPluginToAdd.push_back(pObj);
+  m_mtxObjPluginToAdd.unlock();
   return 0;
 }
 
-int CApp::Init_Plugins(CPhysic_World* pWorld, 
-                       std::vector<CPlugin*> & vecPluginInstance) {
+int CApp::Set_vecObjToRemove(ObjAttr_t* pObj) {
+  m_mtxObjPluginToRemove.lock();
+  m_vecObjPluginToRemove.push_back(pObj);
+  m_mtxObjPluginToRemove.unlock();
+  return 0;
+}
+
+
+int CApp::Init_ObjPlugins(CPhysic_World* pWorld,
+                       std::map<std::string,ObjAttr_t*> &mapObjs, 
+                       std::vector<ObjAttr_t*> & vecObjPluginInstance) {
   SDL_Event* pEvt = nullptr;
   double dbTimeDiff = 0;
-  for (auto item : vecPluginInstance) {
-    if (item->OnDeInit != nullptr) {
-      item->OnInit(pWorld,pEvt,dbTimeDiff,item);
+  for (auto Obj : vecObjPluginInstance) {
+    CPlugin* &pPlugin = Obj->pPlugin;
+    if (pPlugin->OnDeInit != nullptr) {
+      pPlugin->OnInit(pWorld,mapObjs,pEvt,dbTimeDiff,pPlugin);
     }
   }
   return 0;
 }
-int CApp::DeInit_Plugins(CPhysic_World* pWorld, 
-                       std::vector<CPlugin*> & vecPluginInstance) {
+
+int CApp::DeInit_ObjPlugins(CPhysic_World* pWorld,
+    std::map<std::string,ObjAttr_t*> &mapObjs,
+    std::vector<ObjAttr_t*> & vecObjPluginInstance) {
   SDL_Event* pEvt = nullptr;
   double dbTimeDiff = 0;
-  for (auto item : vecPluginInstance) {
-    if (item->OnDeInit != nullptr) {
-      item->OnDeInit(pWorld,pEvt,dbTimeDiff,item);
+  for (auto pObj : vecObjPluginInstance) {
+printf("\033[1;33m[%s][%d] :x: chk \033[m\n",__FUNCTION__,__LINE__);
+
+    CPlugin* &pPlugin = pObj->pPlugin;
+    if (pPlugin->OnDeInit != nullptr) {
+      pPlugin->OnDeInit(pWorld,mapObjs,pEvt,dbTimeDiff,pPlugin);
     }
   }
   return 0;
 }
+
+
+
+
 double g_dbActualFPS =0.0f;
 double Get_FPS() {
   return g_dbActualFPS;
