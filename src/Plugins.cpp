@@ -82,8 +82,8 @@ bool Chk_Tag(CPhysic_World* &pWorld,
     }
     for ( auto pItem : pWorld->m_mapTagObj[strTargetTag]) {
       if ( pBody == pItem->pBody) {
-        printf("\033[1;33m[%s][%d] :x: Tag : %s \033[m\n",
-            __FUNCTION__,__LINE__,strTargetTag.c_str());
+        //printf("\033[1;33m[%s][%d] :x: Tag : %s \033[m\n",
+        //    __FUNCTION__,__LINE__,strTargetTag.c_str());
         pContactedObj = pItem;
         return true;
       }
@@ -146,15 +146,13 @@ int Plug_Player01(CPhysic_World* &pWorld,
       
       ObjAttr_t* pContactedObj = nullptr;
       // Check the tags
-      if (Chk_Tag(pWorld,vecTargetTags,pBodyA,pContactedObj)) {
+      if (Chk_Tag(pWorld,vecTargetTags,pBodyA,pContactedObj) || 
+          Chk_Tag(pWorld,vecTargetTags,pBodyB,pContactedObj) ) {
         // Destroy Obj
         printf("\033[1;33m[%s][%d] :x: COntacted %s \033[m\n",
             __FUNCTION__,__LINE__,pContactedObj->strObjName.c_str());
         std::shared_ptr<CApp> pApp =Get_pApp();
         pApp->Set_vecObjToRemove(pContactedObj);
-      }
-      if (Chk_Tag(pWorld,vecTargetTags,pBodyB,pContactedObj)) {
-        printf("\033[1;33m[%s][%d] :x: Bingo \033[m\n",__FUNCTION__,__LINE__);
       }
 
 
@@ -225,11 +223,9 @@ int Plug_Player01(CPhysic_World* &pWorld,
           case SDLK_f:
             pBody->ApplyForceToCenter(b2Vec2( 0,-2000), true);
             break;
-
           case SDLK_r:
+            pBody->GetFixtureList()->SetSensor(true);
             break;
-
-
         }
       }
       
@@ -315,6 +311,14 @@ int Plug_Enemy_Flyer_DeInit(CPhysic_World* &pWorld,std::map<std::string,ObjAttr_
   printf("\033[1;33m[%s][%d] :x: DeInit Enemy_Flyer \033[m\n",
       __FUNCTION__,__LINE__);
 
+  if (pInstance->m_pBody != nullptr) {
+    printf("\033[1;31m[%s][%d] :x: DestroyBody!!!!!!! \033[m\n",__FUNCTION__,__LINE__);
+    pWorld->m_pWorld->DestroyBody(pInstance->m_pBody);
+    pInstance->m_pBody= nullptr;
+    
+    printf("\033[1;31m[%s][%d] :x: DestroyBody!!!!!!! \033[m\n",__FUNCTION__,__LINE__);
+  }
+ 
   return 0;
 }
 int Plug_Enemy_Flyer(CPhysic_World* &pWorld,std::map<std::string,ObjAttr_t*> &mapObjs, SDL_Event* &pEvt,
@@ -422,6 +426,13 @@ int Plug_Enemy_Ground_Tracker_DeInit(CPhysic_World* &pWorld,std::map<std::string
                               double& dbTimeDiff, CPlugin* pInstance) {
   printf("\033[1;33m[%s][%d] :x: DeInit \033[m\n",
       __FUNCTION__,__LINE__);
+
+  printf("\033[1;31m[%s][%d] :x: DestroyBody!!!!!!! \033[m\n",__FUNCTION__,__LINE__);
+  pWorld->m_pWorld->DestroyBody(pInstance->m_pBody);
+  pInstance->m_pBody= nullptr;
+  printf("\033[1;31m[%s][%d] :x: DestroyBody!!!!!!! \033[m\n",__FUNCTION__,__LINE__);
+  
+
   return 0;
 }
 
@@ -519,7 +530,9 @@ int Plug_Enemy_Ground_Tracker(CPhysic_World* &pWorld,std::map<std::string,ObjAtt
 
   return 0;
 }
-int Plug_Spawner(CPhysic_World* &pWorld,std::map<std::string,ObjAttr_t*> &mapObjs, SDL_Event* &pEvt,
+
+int Plug_Spawner(CPhysic_World* &pWorld,
+                 std::map<std::string,ObjAttr_t*> &mapObjs, SDL_Event* &pEvt,
                               double& dbTimeDiff, CPlugin* pInstance) {
   std::map<std::string, float> & Float_Common = pInstance->m_Float_Common;
   std::map<std::string, int> &Int_Common=pInstance->m_Int_Common;
@@ -556,6 +569,13 @@ int Plug_Spawner(CPhysic_World* &pWorld,std::map<std::string,ObjAttr_t*> &mapObj
       pInstance->OnExecute = Plug_Enemy_Flyer;
       mapObjs[strSpawnedObjName]->pPlugin = pInstance;
       pApp->Set_vecObjToAdd(mapObjs[strSpawnedObjName]);
+
+      std::string strTag;
+      if (!CTMX_Reader::GetTag(*(pTMX_Ctx.get()), 205, strTag)) {
+        printf("\033[1;32m[%s][%d] :x: Tag %s \033[m\n",__FUNCTION__,__LINE__,strTag.c_str());
+        pWorld->m_mapTagObj[strTag].push_back(mapObjs[strSpawnedObjName]);
+      }
+
       printf("\033[1;33m[%s][%d] :x: Spawn [%s]\033[m\n",__FUNCTION__,__LINE__,
                                                      strSpawnedObjName.c_str());
     }
@@ -564,7 +584,8 @@ int Plug_Spawner(CPhysic_World* &pWorld,std::map<std::string,ObjAttr_t*> &mapObj
 
   return 0;
 }
-int Plug_FPS_Drawer_Init(CPhysic_World* &pWorld,std::map<std::string,ObjAttr_t*> &mapObjs, SDL_Event* &pEvt,
+int Plug_FPS_Drawer_Init(CPhysic_World* &pWorld,std::map<std::string,
+                         ObjAttr_t*> &mapObjs, SDL_Event* &pEvt,
                               double& dbTimeDiff, CPlugin* pInstance) {
   printf("\033[1;33m[%s][%d] :x: Init \033[m\n",__FUNCTION__,__LINE__);
 
@@ -575,7 +596,8 @@ int Plug_FPS_Drawer_Init(CPhysic_World* &pWorld,std::map<std::string,ObjAttr_t*>
   Ptr_Common["TxtTexture"] = nullptr;
   return 0;
 }
-int Plug_FPS_Drawer_DeInit(CPhysic_World* &pWorld,std::map<std::string,ObjAttr_t*> &mapObjs, SDL_Event* &pEvt,
+int Plug_FPS_Drawer_DeInit(CPhysic_World* &pWorld,std::map<std::string,
+                           ObjAttr_t*> &mapObjs, SDL_Event* &pEvt,
                               double& dbTimeDiff, CPlugin* pInstance) {
   std::map<std::string, void*> & Ptr_Common = pInstance->m_Ptr_Common;
 

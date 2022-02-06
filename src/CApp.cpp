@@ -466,6 +466,19 @@ int CApp::Add_Objs(CPhysic_World* pWorld,std::map<std::string,ObjAttr_t*> &mapOb
   return 0;
 }
 
+
+/**
+ * @brief Remove objects in 'vecObjToRemove'
+ *
+ * @param pWorld
+ * @param mapObjs
+ * @param pEvt
+ * @param dbTimeDiff
+ * @param vecObjToRemove
+ * @param 
+ *
+ * @return 
+ */
 int CApp::Remove_Objs(CPhysic_World* pWorld,
     std::map<std::string,ObjAttr_t*> &mapObjs,
     SDL_Event* pEvt,double dbTimeDiff,
@@ -490,8 +503,8 @@ int CApp::Remove_Objs(CPhysic_World* pWorld,
         pPlugin = nullptr;
       }
       mapObjs.erase(pObj->strObjName);
-      //delete pObj;
-      //pObj = nullptr;
+      delete pObj;
+      pObj = nullptr;
     }
     vecObjToRemove.clear();
   }

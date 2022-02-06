@@ -56,8 +56,6 @@ public:
                  int iVelocityIter=6, int iPositionIter=2); 
 
   b2World* m_pWorld;
-  //        body         tile index, width, height
-  std::map<b2Body*,std::tuple<int,  float,float>> m_mapBodies;
   //                  tileidx   x     y    w      h    angle
   std::vector<std::tuple<int, float,float,float,float,float>> m_vecBackground;
 

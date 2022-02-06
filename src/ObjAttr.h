@@ -2,6 +2,9 @@
 #define _OBJ_ATTR_H_ 
 
 #include <functional>
+#include <vector>
+#include <map>
+#include "box2d/box2d.h"
 class CPlugin;
 
 // Application Object attribute
@@ -45,10 +48,19 @@ typedef struct ObjAttr {
 
 class CObjDirectory {
   public:
-
-  bool Find_by_Name(std::string strObjName, ObjAttr_t* pObj);
-  bool Find_by_Tag(std::string strTag,std::vector<ObjAttr_t*> pvecObj);
+  bool Find_by_Name(std::string &strObjName, ObjAttr_t* pObj);
+  bool Find_by_Tag(std::string &strTag,std::vector<ObjAttr_t*> &vecObj);
   bool Find_by_Body(b2Body* pBody,ObjAttr_t* pObj);
   std::map<std::string,ObjAttr_t*> m_mapObjs;
+
+           // Tag          body
+  std::map<std::string,std::vector<b2Body*>> m_mapTags;
+  // Map variable that is mapping tag - Objects
+           // Tag          Object
+  std::map<std::string,std::vector<ObjAttr_t*>> m_mapTagObj;
+
+
+
+
 };
 #endif /* ifndef _OBJ_ATTR_H_ */
