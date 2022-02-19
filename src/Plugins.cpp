@@ -23,6 +23,9 @@ static float GetDistance(float fX1,float fY1, float fX2, float fY2) {
       pow(fY2 - fY1, 2) * 1.0);
 };
 
+double AngleBetweenVec2(b2Vec2 &vec2A,b2Vec2 &vec2B) {
+  return (atan2(vec2B.y,vec2B.x) - atan2(vec2A.y,vec2A.x))*180/M_PI;
+}
 
 static b2Vec2 PixelToCoord_M(int iPixel_X, int iPixel_Y,float fScale_Pixel_per_Meter,int iScreenWidth =SCREEN_WIDTH ) {
   float fX_M =  (iPixel_X-(float)(SCREEN_WIDTH/2.f)) / fScale_Pixel_per_Meter;
@@ -211,6 +214,143 @@ bool Chk_Tag(CObjDirectory &ObjDirectory,
   }
   return false;
 }
+
+int Plug_Missile_Init(CPhysic_World* &pWorld,             
+            CObjDirectory &ObjDirectory,
+            SDL_Event* &pEvt,double& dbTimeDiff,
+            CPlugin* pInstance) {
+
+  std::map<std::string, float> & Float_Common = pInstance->m_Float_Common;
+  Float_Common["Direction_Degree"] = 90;
+  Float_Common["Thrust"] = 60;
+  Float_Common["ReflectionTimeDiff"] = 0;
+  Float_Common["Rotation_Rate"] = 2;
+  pInstance->m_Float_Common["LifeTime"] = 8;
+  b2Body* pBody = pInstance->m_pBody;
+  pBody->SetGravityScale(0);
+  return 0;
+}
+
+int Plug_Missile(CPhysic_World* &pWorld,             
+            CObjDirectory &ObjDirectory,
+            SDL_Event* &pEvt,double& dbTimeDiff,
+            CPlugin* pInstance) {
+  std::map<std::string, float> & Float_Common = pInstance->m_Float_Common;
+  float fReactionRate_SEC = 0.1;
+  b2Body* pBody = pInstance->m_pBody;
+  b2Vec2 vec2CurPos_M=pBody->GetPosition();
+
+  b2Vec2 vec2Direction = AngleToVector(Float_Common["Direction_Degree"]); 
+  pBody->SetTransform(vec2CurPos_M,-(Float_Common["Direction_Degree"]-90));
+  vec2Direction*=Float_Common["Thrust"];
+  pBody->ApplyForceToCenter(vec2Direction, true); 
+  //pBody->SetLinearVelocity(vec2Direction);
+  float fRange_M = 55.f;
+
+  // Target to Attack
+  std::vector<std::string> vecTargetTags ={
+    "Enemy_Flyer",
+    "Enemy_Ground_Tracker",
+  };
+
+  Float_Common["ReflectionTimeDiff"] +=dbTimeDiff;
+  float fTargetAngle;
+  //if (Float_Common["ReflectionTimeDiff"] > fReactionRate_SEC ) 
+  {
+    Float_Common["ReflectionTimeDiff"] = 0;
+  
+    std::vector<b2Body*> vecTargetBodies;
+    Find_Bodies(vecTargetTags,fRange_M,vec2CurPos_M,vecTargetBodies,ObjDirectory);
+    int iTargetBodySize = vecTargetBodies.size();
+    SDL_Color Color =COLOR_RED;
+    if (iTargetBodySize > 0  ) {
+      for (auto pTargetBody : vecTargetBodies) {
+        //b2Vec2 vec2TargetPos = pTargetBody->GetPosition();
+        b2Vec2 vec2TargetPos = vecTargetBodies[0]->GetPosition();
+        Dbg_DrawLine_Scale(
+            vec2CurPos_M.x, 
+            vec2CurPos_M.y, 
+            vec2TargetPos.x, vec2TargetPos.y,Color);
+      }
+      b2Vec2 vec2TargetDir =  vecTargetBodies[0]->GetPosition()-vec2CurPos_M;
+      vec2TargetDir.Normalize();
+      fTargetAngle = AngleBetweenVec2(vec2TargetDir,vec2Direction);
+
+      if (fTargetAngle  > 0) {
+        Float_Common["Direction_Degree"] -=Float_Common["Rotation_Rate"];
+      } else if (fTargetAngle  <= 0) {
+        Float_Common["Direction_Degree"] +=Float_Common["Rotation_Rate"];
+      }
+      
+
+
+    }
+  }
+
+  b2ContactEdge* pContacts = pBody->GetContactList();
+  if (pContacts) {
+    do {
+      // Fixture A's body ; the body that is applying force
+      b2Body* pBodyA = pContacts->contact->GetFixtureA()->GetBody();
+      // Fixture B's body ; the body that is received force 
+      b2Body* pBodyB = pContacts->contact->GetFixtureB()->GetBody();
+
+      ObjAttr_t* pContactedObj = nullptr;
+      // Check the tags
+      if (Chk_Tag(ObjDirectory,vecTargetTags,pBodyA,pContactedObj) || 
+          Chk_Tag(ObjDirectory,vecTargetTags,pBodyB,pContactedObj) ) {
+        // Destroy Obj
+        printf("\033[1;33m[%s][%d] :x: COntacted %s \033[m\n",
+            __FUNCTION__,__LINE__,pContactedObj->strObjName.c_str());
+        std::shared_ptr<CApp> pApp =Get_pApp();
+        // Attack contacted body
+        pContactedObj->pPlugin->m_Float_Common["Damage"]+=33;
+        // Remove Self body
+        pApp->Set_setObjToRemove(ObjDirectory.m_mapBody_Obj[pBody]);
+      }
+      pContacts = pContacts->next;
+    } while (pContacts);
+  }
+
+
+
+  if (pEvt) {
+    // Input Event
+    if( pEvt->type == SDL_KEYDOWN ) {
+        switch( pEvt->key.keysym.sym ) {
+          case SDLK_i:
+            Float_Common["Direction_Degree"]+=5 ;
+            printf("\033[1;32m[%s][%d] :x: %f \033[m\n",
+                __FUNCTION__,__LINE__,Float_Common["Direction_Degree"]);
+            printf("\033[1;36m[%s][%d] :x: angle %f \033[m\n",__FUNCTION__,__LINE__,fTargetAngle);
+            break;
+          case SDLK_o:
+            Float_Common["Direction_Degree"]-=5 ;
+            printf("\033[1;32m[%s][%d] :x: %f \033[m\n",
+                __FUNCTION__,__LINE__,Float_Common["Direction_Degree"]);
+            printf("\033[1;36m[%s][%d] :x: angle %f \033[m\n",__FUNCTION__,__LINE__,fTargetAngle);
+            break;
+          case SDLK_p:
+            printf("\033[1;36m[%s][%d] :x: angle %f \033[m\n",__FUNCTION__,__LINE__,fTargetAngle);
+            break;
+
+        }
+
+    }
+  }
+
+
+
+  Float_Common["LifeTime"] -=dbTimeDiff;
+  std::shared_ptr<CApp> pApp =Get_pApp();
+  if (pInstance->m_Float_Common["LifeTime"] < 0) {
+    printf("\033[1;31m[%s][%d] :x: Die Bullet \033[m\n",__FUNCTION__,__LINE__);
+    pApp->Set_setObjToRemove(ObjDirectory.m_mapBody_Obj[pBody]);
+    return 0;
+  }
+  return 0;
+}
+ 
 int Plug_Bullet_Init(CPhysic_World* &pWorld,             
             CObjDirectory &ObjDirectory,
             SDL_Event* &pEvt,double& dbTimeDiff,
@@ -242,9 +382,9 @@ int Plug_Bullet(CPhysic_World* &pWorld,
     return 0;
   }
 
+  // Apply damage to contacted body
   b2ContactEdge* pContacts = pBody->GetContactList();
   if (pContacts) {
-
     do {
       // Fixture A's body ; the body that is applying force
       b2Body* pBodyA = pContacts->contact->GetFixtureA()->GetBody();
@@ -269,6 +409,63 @@ int Plug_Bullet(CPhysic_World* &pWorld,
   }
 
 
+
+  return 0;
+}
+int Spawn_Missile(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory,
+                 b2Vec2 &vec2CurPos,b2Vec2 &vec2Direction) {
+  int iBulletTileIdx;
+  // 209 : slug bullet
+  int iIdxSlugBullet = 209;
+  // 208 : piercing bullet
+  int iIdxPiercingBullet = 208;
+  // 210 : shell bullet
+  int iIdxShellBullet = 210; 
+  //iBulletTileIdx= iIdxSlugBullet;
+  //iBulletTileIdx= iIdxPiercingBullet;
+  iBulletTileIdx= iIdxShellBullet;
+  int fBulletBaseAngle = -90.f;
+  std::shared_ptr<CApp> pApp =Get_pApp();
+  std::shared_ptr<TMX_Ctx> pTMX_Ctx =  Get_pTMX_Ctx();
+  std::map<std::string,ObjAttr_t*> &mapObjs = ObjDirectory.m_mapObjs;
+
+  std::string strSpawnedObjName;
+  float fSpawnDistance_M=1.9f;
+  b2Vec2 vec2SpawnPosition = vec2Direction;
+  vec2SpawnPosition.Normalize();
+  vec2SpawnPosition*=fSpawnDistance_M;
+  vec2SpawnPosition+=vec2CurPos;
+
+  b2Body* pSpawnedBody = nullptr;
+
+  strSpawnedObjName = pWorld->Create_Element(
+      *(pTMX_Ctx.get()),iBulletTileIdx,vec2SpawnPosition.x,vec2SpawnPosition.y, ObjDirectory);
+
+  if (strSpawnedObjName == "Error") {
+    return -1;
+  }
+
+  pSpawnedBody = mapObjs[strSpawnedObjName]->pBody; 
+  if (pSpawnedBody == pSpawnedBody->GetNext()) {
+    printf("\033[1;31m[%s][%d] :x: Error Case!!!! %p \033[m\n",__FUNCTION__,__LINE__,pSpawnedBody);
+  }
+
+  pSpawnedBody->SetTransform(vec2SpawnPosition,
+                             -(VectorToAngle(vec2Direction)+fBulletBaseAngle));
+  //pSpawnedBody->SetBullet(true);
+  //pSpawnedBody->ApplyLinearImpulseToCenter(vec2Direction, true);
+
+  auto pInstance = new CPlugin();
+  pInstance->m_pBody = pSpawnedBody;
+  pInstance->OnInit = Plug_Missile_Init;
+  pInstance->OnDeInit = nullptr;
+  pInstance->OnExecute = Plug_Missile;
+
+  mapObjs[strSpawnedObjName]->pPlugin = pInstance;
+  mapObjs[strSpawnedObjName]->vecTag.clear();
+  pApp->Set_vecObjToAdd(mapObjs[strSpawnedObjName]);
+
+  ObjDirectory.UpdateDirectory();
 
   return 0;
 }
@@ -444,6 +641,7 @@ int Plug_Player01(CPhysic_World* &pWorld,
   static double dbInputTimeDiff =0;
   static SDL_Keycode Prev_Key_Input;
   dbInputTimeDiff +=dbTimeDiff;
+  b2Vec2 vec2MissileDirection(0,3);
   
 
   b2Vec2 vec2BulletDirection;
@@ -553,6 +751,12 @@ int Plug_Player01(CPhysic_World* &pWorld,
               }
             }
 
+
+            break;
+          case SDLK_g:
+             if (!Spawn_Missile(pWorld,ObjDirectory,vec2CurPos_M,vec2MissileDirection)) {
+
+             }
 
             break;
           case SDLK_r:

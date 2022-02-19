@@ -195,4 +195,14 @@
    <property name="Tag" value="Bullet"/>
   </properties>
  </tile>
+ <tile id="29">
+  <properties>
+   <property name="PhysicSize_H" value="16"/>
+   <property name="PhysicSize_W" value="8"/>
+   <property name="PhysicSize_X" value="8"/>
+   <property name="PhysicSize_Y" value="4"/>
+   <property name="PhysicType" value="Dynamic"/>
+   <property name="Tag" value="Bullet"/>
+  </properties>
+ </tile>
 </tileset>
