@@ -20,7 +20,8 @@ int Init_SDL_ctx(SDL_Window* &pWindow, SDL_Renderer* &pRenderer) {
         __FUNCTION__,__LINE__,SDL_GetError());
     return -1;
   }
-
+  // initial cursor position
+  SDL_WarpMouseInWindow(pWindow, INITIAL_CURSOR_POS_X, INITIAL_CURSOR_POS_Y);
 	pRenderer = SDL_CreateRenderer( pWindow, -1, 
       SDL_RENDERER_ACCELERATED  );
 
@@ -97,36 +98,20 @@ int DrawText(SDL_Texture* &pTxtTexture,TTF_Font* &pFont,
  * @return  Actual FPS
  */
 double Frame_Rate_Control(double dbFPS,double &dbTimeDiff_SEC){
-  static auto Frame_start = std::chrono::system_clock::now();
-  static auto Frame_end   = std::chrono::system_clock::now();
+  static std::chrono::time_point<std::chrono::system_clock> Frame_time;
   std::chrono::duration<double> Frame_diff_SEC;
-  std::chrono::duration<double> Actual_Frame_diff_SEC;
 
-  Frame_end = std::chrono::system_clock::now();
-  Frame_diff_SEC = Frame_end - Frame_start;
-  // :x:  Reference frame interval
-  double dbRef_SEC= 1.0f/dbFPS;
-
-  if (Frame_diff_SEC.count() < dbRef_SEC) {
-    usleep((dbRef_SEC - Frame_diff_SEC.count())*1000000);
+  Frame_diff_SEC = std::chrono::system_clock::now() - Frame_time;
+  if (Frame_diff_SEC.count() < SCREEN_INTERVAL_TIME_SEC ) {
+    usleep( (SCREEN_INTERVAL_TIME_SEC-Frame_diff_SEC.count())*1000000);
   }
+  Frame_time = std::chrono::system_clock::now();
 
-  Frame_start = std::chrono::system_clock::now();
-  Actual_Frame_diff_SEC = Frame_start - Frame_end;
-  dbTimeDiff_SEC = Actual_Frame_diff_SEC.count();
-  return (1.0f/dbTimeDiff_SEC);
+  static std::chrono::time_point<std::chrono::system_clock> Actual_time;
+  std::chrono::duration<double> Actual_diff_SEC = 
+                                 std::chrono::system_clock::now() - Actual_time;
+  Actual_time = std::chrono::system_clock::now();
+  dbTimeDiff_SEC = Actual_diff_SEC.count();
+  return (1.0/dbTimeDiff_SEC);
+
 }
-
-/**
- * @brief 
- *
- * @param TileSet[IN]
- * @param mapTexture[OUT]
- */
-void Create_TextureMap_FromTileSet(TileSet& TileSet,SDL_Renderer* pRenderer,
-                                   std::map<int,SDL_Texture>& mapTexture) {
-
-  TileSet.strImgSourceFile;
-  auto pImgTexture = IMG_LoadTexture(pRenderer, "resource/pics/gui_common_ex00.png");
-}
-

@@ -5,15 +5,16 @@
 #include <mutex>
 #include <stdio.h>
 #include <functional>
+#include <set>
 #include "SDL2_Ctx.h"
 #include "CPhysic_World.h"
 #include "Plugins.h"
 #include "CPlugin.h"
 #include "ObjAttr.h"
+
+
 // Sprite type (texture index --> m_mapTextures, sprite area)
 typedef std::tuple<int,SDL_Rect> Sprite_t;
-
-
 
 #define MAX_SCREENS (4)
 class CApp {
@@ -24,7 +25,6 @@ public:
       printf("\033[1;31m[%s][%d] :x: Err on Init \033[m\n",
           __FUNCTION__,__LINE__);
     }
-    m_vecObjPluginInstance.clear();
   };
   ~CApp() {
     printf("\033[1;33m[%s][%d] :x: chk \033[m\n",__FUNCTION__,__LINE__);
@@ -73,71 +73,80 @@ public:
                        SDL_Renderer* &pRenderer);
   void Draw_Sprite(int iPixel_X, int iPixel_Y, int iIdx,float fAngle); 
   void Draw_Sprite(int iPixel_X, int iPixel_Y, int iIdx);
-  int  Draw_Point_Pixel(float iPixel_X,float iPixel_Y,SDL_Renderer* & pRenderer);
+  int  Draw_Point_Pixel(float fPixel_X,float fPixel_Y,SDL_Renderer* & pRenderer,
+                        SDL_Color& Color);
+  int  Draw_Point_Pixel(float fPixel_X,float fPixel_Y,SDL_Renderer* & pRenderer);
   int  Draw_Point_Pixel(float fPixel_X,float fPixel_Y);
   int  Draw_Point_Scale(float fX_M,float fY_M,CPhysic_World* pWorld,
+                        SDL_Color& Color,SDL_Renderer* pRenderer);
+  int  Draw_Point_Scale(float fX_M,float fY_M,CPhysic_World* pWorld,
                         SDL_Renderer* pRenderer);
+  int  Draw_Point_Scale(float fX_M,float fY_M,SDL_Color& Color);
   int  Draw_Point_Scale(float fX_M,float fY_M);
   int  Draw_Line_Pixel(float fPixelA_X,float fPixelA_Y,
                        float fPixelB_X,float fPixelB_Y,
                        SDL_Renderer* & pRenderer );
   int  Draw_Line_Pixel(float fPixelA_X,float fPixelA_Y,
                        float fPixelB_X,float fPixelB_Y);
+  int  Draw_Line_Pixel(float fPixelA_X,float fPixelA_Y,
+                       float fPixelB_X,float fPixelB_Y,SDL_Color& Color);
+  int  Draw_Line_Pixel(float fPixelA_X,float fPixelA_Y,
+                       float fPixelB_X,float fPixelB_Y,SDL_Color& Color,
+                          SDL_Renderer* & pRenderer );
+
 
   int  Draw_Line_Scale(float fPixelA_X,float fPixelA_Y,
                        float fPixelB_X,float fPixelB_Y);
   int  Draw_Line_Scale(float fPixelA_X,float fPixelA_Y,
                        float fPixelB_X,float fPixelB_Y, 
                        CPhysic_World* pWorld, SDL_Renderer* pRenderer);
+  int  Draw_Line_Scale(float fPixelA_X,float fPixelA_Y,
+                       float fPixelB_X,float fPixelB_Y, SDL_Color& Color,
+                       CPhysic_World* pWorld, SDL_Renderer* pRenderer);
+  int Draw_Line_Scale(float fAX_M, float fAY_M, 
+                          float fBX_M, float fBY_M, SDL_Color &Color);
 
   int Create_World(TMX_Ctx &TMX_context,
-                   std::map<std::string,ObjAttr_t*> &mapObjs);
+      CObjDirectory &ObjDirectory ) ;
 
   int Spin_World(double &dbTimeDiff,CPhysic_World* pWorld);
 
+
   int Execute_Plugins(CPhysic_World* pWorld,
-                      std::map<std::string,ObjAttr_t*> &mapObjs,
-                      SDL_Event* pEvt,double dbTimeDiff,
-                      std::vector<ObjAttr_t*> &vecObjPluginInstance);
+                      CObjDirectory &ObjDirectory,
+                      SDL_Event* pEvt,double dbTimeDiff
+                      );
 
   int Remove_Objs(CPhysic_World* pWorld,
-                     std::map<std::string,ObjAttr_t*> &mapObjs,
+                     CObjDirectory &ObjDirectory,
                      SDL_Event* pEvt,double dbTimeDiff,
-                     std::vector<ObjAttr_t*> &vecObjToRemove,
-                     std::vector<ObjAttr_t*> &vecObjPluginInstance
+                     std::set<ObjAttr_t*> &setObjToRemove
       );
 
-  int Add_Objs(CPhysic_World* pWorld,std::map<std::string,ObjAttr_t*> &mapObjs,
+  int Add_Objs(CPhysic_World* pWorld,
+                  CObjDirectory &ObjDirectory,
                   SDL_Event* pEvt,double dbTimeDiff,
-                  std::vector<ObjAttr_t*> &vecObjToAdd,
-                  std::vector<ObjAttr_t*> &vecObjPluginInstance
+                  std::vector<ObjAttr_t*> &vecObjToAdd
                   );
 
-
-
-  
-
-
-  int Init_ObjPlugins(CPhysic_World* pWorld,
-      std::map<std::string,ObjAttr_t*> &mapObjs, 
-      std::vector<ObjAttr_t*> & vecObjPluginInstance) ;
+  int Init_ObjPlugins(CPhysic_World* pWorld,CObjDirectory &ObjDirectory);
 
   int DeInit_ObjPlugins(CPhysic_World* pWorld,
-                        std::map<std::string,ObjAttr_t*> &mapObjs,
-                        std::vector<ObjAttr_t*> & vecObjPluginInstance);
+                        CObjDirectory &ObjDirectory
+                        );
+
 
   int Set_vecObjToAdd(ObjAttr_t* pObj); 
-  int Set_vecObjToRemove(ObjAttr_t* pObj); 
+  int Set_setObjToRemove(ObjAttr_t* pObj); 
 
 
   int Register_Plugins();
   // Plugin Instances
-  std::vector<ObjAttr_t*> m_vecObjPluginInstance;
   std::vector<CPlugin*> m_vecPluginToAdd;
   std::vector<ObjAttr_t*> m_vecObjPluginToAdd;
 
   std::vector<CPlugin*> m_vecPluginToRemove;
-  std::vector<ObjAttr_t*> m_vecObjPluginToRemove;
+  std::set<ObjAttr_t*> m_setObjPluginToRemove;
 
   
   std::mutex m_mtxObjPluginToAdd;
@@ -172,7 +181,7 @@ public:
   bool m_bStopFlag = false;
 
   // Objects in the App
-  std::map<std::string,ObjAttr_t*> m_mapObjs;
+  CObjDirectory m_ObjDirectory;
 };
 
 

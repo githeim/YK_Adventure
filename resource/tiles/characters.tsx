@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.5" tiledversion="1.7.2" name="characters" tilewidth="24" tileheight="24" tilecount="27" columns="9">
- <image source="characters.png" width="216" height="72"/>
+<tileset version="1.5" tiledversion="1.7.2" name="characters" tilewidth="24" tileheight="24" tilecount="36" columns="9">
+ <image source="characters.png" width="216" height="96"/>
  <tile id="0">
   <properties>
    <property name="PhysicSize_H" value="24"/>
@@ -173,6 +173,26 @@
   <properties>
    <property name="PhysicType" value="Dynamic"/>
    <property name="Tag" value="Enemy_Flyer"/>
+  </properties>
+ </tile>
+ <tile id="27">
+  <properties>
+   <property name="PhysicSize_H" value="12"/>
+   <property name="PhysicSize_W" value="12"/>
+   <property name="PhysicSize_X" value="6"/>
+   <property name="PhysicSize_Y" value="6"/>
+   <property name="PhysicType" value="Dynamic"/>
+   <property name="Tag" value="Bullet"/>
+  </properties>
+ </tile>
+ <tile id="28">
+  <properties>
+   <property name="PhysicSize_H" value="12"/>
+   <property name="PhysicSize_W" value="6"/>
+   <property name="PhysicSize_X" value="9"/>
+   <property name="PhysicSize_Y" value="6"/>
+   <property name="PhysicType" value="Dynamic"/>
+   <property name="Tag" value="Bullet"/>
   </properties>
  </tile>
 </tileset>

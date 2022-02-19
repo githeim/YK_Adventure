@@ -2,53 +2,20 @@
 #include "Plugins.h"
 
 /**
- * @brief Tag map에 따라 플러그인 인스턴스 vector를 생성한다
+ * @brief Create Plugin instances & add created plugins to ObjDirectory variable
  *
- * @param mapTags[IN]
- * @param vecPluginInstance[OUT]
+ * @param mapObjs[IN]
+ * @param vecObjPluginInstance[OUT]
  *
  * @return 
  */
-int CreatePlugins_byTagMap(std::map<std::string,std::vector<b2Body*>> &mapTags,
-                  std::vector<CPlugin*> &vecPluginInstance)
+
+int CreatePlugins_byObjDir(CObjDirectory &ObjDirectory)
 {
-  for (auto Item : mapTags) {
-    const std::string &strTag = Item.first;
-    const std::vector<b2Body*> &vecBodies = Item.second;
-    for (auto pBody : vecBodies) {
-      auto pInstance = new CPlugin();
-      pInstance->m_pBody = pBody;
+  std::map<std::string,ObjAttr_t*> &mapObjs = ObjDirectory.m_mapObjs;
+  std::vector<ObjAttr_t*> &vecObjPluginInstance = 
+                                            ObjDirectory.m_vecObjPluginInstance;
 
-      if (strTag == "Player01") {
-        printf("\033[1;33m[%s][%d] :x: player1 instance 0x%p\033[m\n",
-            __FUNCTION__,__LINE__,pBody);
-        pInstance->OnExecute = Plug_Player01;
-      } else if (strTag == "Enemy_Ground_Tracker") {
-        printf("\033[1;33m[%s][%d] :x: Enemy_Ground_Tracker instance 0x%p\033[m\n",
-            __FUNCTION__,__LINE__,pBody);
-        pInstance->OnExecute = Plug_Enemy_Ground_Tracker;
-        pInstance->OnInit = Plug_Enemy_Ground_Tracker_Init;
-        pInstance->OnDeInit = Plug_Enemy_Ground_Tracker_DeInit;
-
-      } else if (strTag == "Enemy_Flyer") {
-        printf("\033[1;33m[%s][%d] :x: Enemy_Ground_Tracker instance 0x%p\033[m\n",
-            __FUNCTION__,__LINE__,pBody);
-        pInstance->OnExecute = Plug_Enemy_Flyer;
-        pInstance->OnInit = Plug_Enemy_Flyer_Init;
-        pInstance->OnDeInit = Plug_Enemy_Flyer_DeInit;
-      }
-      else if (strTag == "Enemy_Spawner") {
-        pInstance->OnExecute = Plug_Spawner;
-      }
-      vecPluginInstance.push_back(pInstance);
-    }
-  }
-  return 0;
-}
-
-int CreatePlugins_byObjMap(std::map<std::string,ObjAttr_t*> mapObjs,
-                  std::vector<ObjAttr_t*> &vecObjPluginInstance)
-{
   for (auto Item : mapObjs) {
     const std::string &strObjName = Item.first;
     ObjAttr_t* &pObj = Item.second;
@@ -65,6 +32,10 @@ int CreatePlugins_byObjMap(std::map<std::string,ObjAttr_t*> mapObjs,
         printf("\033[1;33m[%s][%d] :x: player1 instance [%s]\033[m\n",
             __FUNCTION__,__LINE__,strObjName.c_str());
         pInstance->OnExecute = Plug_Player01;
+        
+printf("\033[1;31m[%s][%d] :x: chk \033[m\n",__FUNCTION__,__LINE__);
+
+        pInstance->OnInit = Plug_Player01_Init;
       } else if (strTag == "Enemy_Ground_Tracker") {
         pInstance = new CPlugin();
         pInstance->m_pBody = pObj->pBody;
@@ -101,12 +72,6 @@ int CreatePlugins_byObjMap(std::map<std::string,ObjAttr_t*> mapObjs,
   return 0;
 }
 
-int CreatePlugin()
-{
-  return 0;
-}
-
-
 /**
  * @brief Create Plugin instances that has no physic bodies (= not actor)
  *
@@ -114,18 +79,24 @@ int CreatePlugin()
  *
  * @return 
  */
-int CreateGeneralPlugins(std::vector<CPlugin*> &vecPluginInstance) {
+int CreateGeneralPlugins(CObjDirectory &ObjDirectory) {
+//  // Create FPS Drawer
+//  auto pInstance = new CPlugin();
+//  pInstance->m_pBody= nullptr;
+//  pInstance->OnExecute= Plug_FPS_Drawer;
+//  pInstance->OnInit =   Plug_FPS_Drawer_Init;
+//  pInstance->OnDeInit = Plug_FPS_Drawer_DeInit;
+//  //ObjDirectory.m_vecObjPluginInstance.push_back(pInstance);
 
-  // Create FPS Drawer
+  ObjAttr_t* pInstance = new ObjAttr_t();
+  auto pPlugInstance = new CPlugin();
+  pPlugInstance->m_pBody= nullptr;
+  pPlugInstance->OnExecute= Plug_FPS_Drawer;
+  pPlugInstance->OnInit =   Plug_FPS_Drawer_Init;
+  pPlugInstance->OnDeInit = Plug_FPS_Drawer_DeInit;
+  pInstance->pPlugin= pPlugInstance;
 
-  auto pInstance = new CPlugin();
-  pInstance->m_pBody= nullptr;
-  pInstance->OnExecute= Plug_FPS_Drawer;
-  pInstance->OnInit =   Plug_FPS_Drawer_Init;
-  pInstance->OnDeInit = Plug_FPS_Drawer_DeInit;
-
-  vecPluginInstance.push_back(pInstance);
-
+  ObjDirectory.m_vecObjPluginInstance.push_back(pInstance);
   return 0;
 }
 

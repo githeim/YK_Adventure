@@ -23,9 +23,19 @@
 
 
 #define SCREEN_FPS (50)
+#define SCREEN_INTERVAL_TIME_SEC (1/800) //(0.02)
 #define POINTS_COUNT (4)
 
+#define INITIAL_CURSOR_POS_X (100)
+#define INITIAL_CURSOR_POS_Y (100)
 
+//#define COLOR_YELLOW SDL_Color(255,255,0,SDL_ALPHA_OPAQUE)
+#define DEFAULT_ALPHA (SDL_ALPHA_OPAQUE)
+#define COLOR_RED     {255,0  ,0  , DEFAULT_ALPHA}
+#define COLOR_GREEN   {0  ,255,0  , DEFAULT_ALPHA}
+#define COLOR_BLUE    {0  ,0  ,255, DEFAULT_ALPHA}
+#define COLOR_YELLOW  {255,255,0  , DEFAULT_ALPHA}
+#define COLOR_DEFAULT COLOR_GREEN
 
 int Init_SDL_ctx(SDL_Window* &pWindow, SDL_Renderer* &pRenderer); 
 int DeInit_SDL_ctx(SDL_Window* &pWindow, SDL_Renderer* &pRenderer);

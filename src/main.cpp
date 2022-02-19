@@ -23,14 +23,28 @@ std::shared_ptr<CApp> g_pApp;
 std::shared_ptr<CApp> Get_pApp() {
   return g_pApp;
 }
+int Dbg_DrawPoint_Scale(float fX_M,float fY_M,SDL_Color &Color) {
+  return g_pApp->Draw_Point_Scale(fX_M,fY_M,Color);
+}
+
 int Dbg_DrawPoint_Scale(float fX_M,float fY_M) {
   return g_pApp->Draw_Point_Scale(fX_M,fY_M);
 }
+
+int Dbg_DrawLine_Scale(float fAX_M,float fAY_M,
+                       float fBX_M,float fBY_M,SDL_Color& Color
+    ) {
+  return g_pApp->Draw_Line_Scale(fAX_M,fAY_M,fBX_M,fBY_M,Color);
+}
+
+
 int Dbg_DrawLine_Scale(float fAX_M,float fAY_M,
                        float fBX_M,float fBY_M
     ) {
-  return g_pApp->Draw_Line_Scale(fAX_M,fAY_M,fBX_M,fBY_M);
+  SDL_Color Color = COLOR_DEFAULT;
+  return Dbg_DrawLine_Scale(fAX_M,fAY_M,fBX_M,fBY_M,Color);
 }
+
 
 std::shared_ptr<TMX_Ctx> g_pTMX_Ctx;
 void Set_pTMX_Ctx(std::shared_ptr<TMX_Ctx> pTMX_Ctx) {
@@ -54,7 +68,8 @@ int main(int argc, char *argv[]) {
   pApp->Register_Textures(*pTMX_Ctx,strTileResourcePath);
   pApp->Generate_Sprites(*pTMX_Ctx,pApp->m_mapSprites);
   
-  pApp->Create_World(*pTMX_Ctx,pApp->m_mapObjs);
+  //pApp->Create_World(*pTMX_Ctx,pApp->m_mapObjs);
+  pApp->Create_World(*pTMX_Ctx,pApp->m_ObjDirectory);
   pApp->OnExecute();
 
   return 0;

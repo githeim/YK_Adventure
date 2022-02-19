@@ -6,6 +6,7 @@ static float GetDistance(float fX1,float fY1, float fX2, float fY2) {
   return std::sqrt(pow(fX2 - fX1, 2) +
       pow(fY2 - fY1, 2) * 1.0);
 };
+#if 0 // :x: for test
 
 class WorldContactListener : public b2ContactListener
 {
@@ -25,12 +26,16 @@ public:
 
   CPhysic_World* m_pPhysic_World;
 };
-int CPhysic_World::Create_World(TMX_Ctx &TMX_context,
-                                std::map<std::string,ObjAttr_t*>& mapObjs) {
+#endif // :x: for test
+
+int CPhysic_World::Create_World(TMX_Ctx & TMX_context,
+                   CObjDirectory &ObjDirectory) {
   b2Vec2 gravity(0.0f,-10.0f);
   m_pWorld = new b2World(gravity);
+#if 0 // :x: for test
   m_pContactListener = new WorldContactListener(this);
   m_pWorld->SetContactListener(m_pContactListener);
+#endif // :x: for test
   // Create body define
   Create_BodyDefs(m_mapBodyDef);
   // Create edge shape
@@ -89,7 +94,7 @@ int CPhysic_World::Create_World(TMX_Ctx &TMX_context,
         + ((fTileSizeHeight_M /2)-(fTileSizeHeight_M/2));
       if (iIdx !=0) {
         Create_Element(TMX_context, iIdx,
-            fX_M,fY_M,mapObjs);
+            fX_M,fY_M,ObjDirectory);
       }
 
       iIdxCnt++;
@@ -97,15 +102,12 @@ int CPhysic_World::Create_World(TMX_Ctx &TMX_context,
 
   }
 
-  for (auto item : m_mapTags) {
-    for (auto pBody : item.second) {
-    printf("\033[1;36m[%s][%d] :x: m_mapTags %s %p \033[m\n",
-        __FUNCTION__,__LINE__,item.first.c_str(),pBody);
-    }
+  // Update the Object directory ; update tables
+  ObjDirectory.UpdateDirectory();
 
-  }
   return 0;
 }
+
 
 int CPhysic_World::Destroy_World() {
   for (auto BodyDef : m_mapBodyDef) {
@@ -132,21 +134,12 @@ void CPhysic_World::SpinWorld(double dbTimeStep,
   return;
 }
 
-/**
- * @brief create Objects map 
- *
- * @param TMX_context[IN]
- * @param iTileIdx[IN]
- * @param fX_M[IN]
- * @param fY_M[IN]
- * @param mapObjs[OUT]
- *
- * @return created object's name 
- */
 std::string CPhysic_World::Create_Element(TMX_Ctx &TMX_context, int iTileIdx,
                                   float fX_M,float fY_M,
-                                  std::map<std::string,ObjAttr_t*>& mapObjs) {
+                                  CObjDirectory &ObjDirectory) {
+
   std::string strPhysicType;
+  int iLayerIdx = LAYER_BACKGROUND;
   // 기본 타일 사이즈 pixel
   float fBaseTileWidth = (float)TMX_context.iTileWidth;
   float fBaseTileHeight =(float)TMX_context.iTileHeight;
@@ -173,9 +166,6 @@ std::string CPhysic_World::Create_Element(TMX_Ctx &TMX_context, int iTileIdx,
       std::string strTag="";
       static int iCnt = 0;
       iCnt++;
-      m_vecBackground.push_back(
-          std::tuple<int, float,float,float,float,float>(
-            iTileIdx,fX_M,fY_M,1.33,1.33,0));
       char pBuf[256]={}; 
       sprintf(pBuf,"%s_%03.2f_%03.2f",strPhysicType.c_str(),fX_M,fY_M);
       strObjName = pBuf;
@@ -185,9 +175,10 @@ std::string CPhysic_World::Create_Element(TMX_Ctx &TMX_context, int iTileIdx,
       }
       // background tile is 1.33M x 1.33M
       float fW_M=1.33, fH_M=1.33,fAngle =0;
-      Register_Background(mapObjs,
+      Register_Background(ObjDirectory.m_mapObjs,
                           strObjName,strTag,strPhysicType,
                           iTileIdx,fX_M,fY_M,fW_M,fH_M,fAngle);
+
     }
 
     if (strPhysicType == "Dynamic") {
@@ -195,6 +186,15 @@ std::string CPhysic_World::Create_Element(TMX_Ctx &TMX_context, int iTileIdx,
 
       float fAngle =0;
       pBody = m_pWorld->CreateBody(m_mapBodyDef["dynamic_tile"]);
+#if 1 // :x: for test
+      if (pBody == pBody->GetNext()) {
+        printf("\033[1;31m[%s][%d] :x: Error Case!!!! %p \033[m\n",__FUNCTION__,__LINE__,pBody);
+        return std::string("Error");
+
+      }
+#endif // :x: for test
+
+
       std::string strTag;
       std::vector<std::string> vecTag;
       vecTag.clear();
@@ -235,8 +235,9 @@ std::string CPhysic_World::Create_Element(TMX_Ctx &TMX_context, int iTileIdx,
         pBody->CreateFixture(Polygon->second,30.f);
       }
       pBody->SetTransform(b2Vec2(fX_M,fY_M),0.f); 
-
-      Register_Obj(mapObjs,strObjName,pBody,vecTag,strPhysicType,
+      iLayerIdx = LAYER_OBJ;
+      Register_Obj(ObjDirectory.m_mapObjs,strObjName,pBody,vecTag,strPhysicType,
+                   iLayerIdx,
                    iTileIdx,fTileSizeWidth_M,fTileSizeHeight_M,fAngle,
                    m_mapTagObj);
 
@@ -261,7 +262,10 @@ std::string CPhysic_World::Create_Element(TMX_Ctx &TMX_context, int iTileIdx,
 
       pBody->SetTransform(b2Vec2(fX_M,fY_M),0.f); 
 
-      Register_Obj(mapObjs, strObjName, pBody, vecTag, strPhysicType, iTileIdx, 
+      iLayerIdx = LAYER_GROUND;
+      Register_Obj(ObjDirectory.m_mapObjs, strObjName, pBody, vecTag, strPhysicType, 
+          iLayerIdx,
+          iTileIdx, 
           fGroundTile_W_M, fGroundTile_H_M, fGroundTile_Angle,m_mapTagObj);
     }
   }
@@ -269,6 +273,7 @@ std::string CPhysic_World::Create_Element(TMX_Ctx &TMX_context, int iTileIdx,
 
   return strObjName;
 }
+
 
 int CPhysic_World::Create_BodyDefs(std::map<std::string,b2BodyDef*> &mapBodyDef) {
   // Define body define
@@ -318,12 +323,15 @@ int CPhysic_World::Create_PolygonShape(
   mapPolygonShape["Character_Box"] = pCharacter_Box;
   return 0;
 }
+
+
 int CPhysic_World::Register_Background(std::map<std::string, ObjAttr_t*> &mapObjs,
     std::string &strObjName,
     std::string &strTag, std::string &strPhysicType, int &iTileIdx, 
     float &fX_M, float &fY_M, float &fW_M, float &fH_M, float &fAngle) {
   mapObjs[strObjName] = new ObjAttr_t;
   mapObjs[strObjName]->strObjName = strObjName;
+  mapObjs[strObjName]->iLayerIdx = LAYER_BACKGROUND;
   mapObjs[strObjName]->iTileIdx = iTileIdx;
   mapObjs[strObjName]->pBody = nullptr;
   if (strTag != "") {
@@ -340,22 +348,12 @@ int CPhysic_World::Register_Background(std::map<std::string, ObjAttr_t*> &mapObj
   mapObjs[strObjName]->fW_M   = std::bind(&ObjAttr_t::GetTile_fW_M,mapObjs[strObjName]);
   mapObjs[strObjName]->fH_M   = std::bind(&ObjAttr_t::GetTile_fH_M,mapObjs[strObjName]);
   mapObjs[strObjName]->fAngle = std::bind(&ObjAttr_t::GetStaticTile_fAngle,mapObjs[strObjName]);
-#if 0 // :x: for test
-  printf("\033[1;33m[%s][%d] :x: [Background Tiles] %s  %d %f,%f,%f,%f,%f \033[m\n",
-      __FUNCTION__,__LINE__,
-      strObjName.c_str(),iTileIdx,
-      mapObjs[strObjName]->fX_M(),
-      mapObjs[strObjName]->fY_M(),
-      mapObjs[strObjName]->fW_M(),
-      mapObjs[strObjName]->fH_M(),  
-      mapObjs[strObjName]->fAngle()
-      );
-#endif // :x: for test
   return 0;
 }
 int CPhysic_World::Register_Obj(std::map<std::string, ObjAttr_t*> &mapObjs, 
     std::string &strObjName, b2Body *pBody, std::vector<std::string> &vecTag, 
     std::string &strPhysicType,  
+    int &iLayerIdx,
     int &iTileIdx, 
     float &fW_M, float &fH_M, float &fAngle,
     std::map<std::string,std::vector<ObjAttr_t*>> &mapTagObj
@@ -363,6 +361,7 @@ int CPhysic_World::Register_Obj(std::map<std::string, ObjAttr_t*> &mapObjs,
 {
   mapObjs[strObjName] = new ObjAttr_t;
   mapObjs[strObjName]->strObjName = strObjName;
+  mapObjs[strObjName]->iLayerIdx = LAYER_OBJ;
   mapObjs[strObjName]->iTileIdx = iTileIdx;
   mapObjs[strObjName]->pBody = pBody;
   mapObjs[strObjName]->vecTag.clear();
@@ -381,17 +380,6 @@ int CPhysic_World::Register_Obj(std::map<std::string, ObjAttr_t*> &mapObjs,
   mapObjs[strObjName]->fW_M   = std::bind(&ObjAttr_t::GetTile_fW_M,mapObjs[strObjName]);
   mapObjs[strObjName]->fH_M   = std::bind(&ObjAttr_t::GetTile_fH_M,mapObjs[strObjName]);
   mapObjs[strObjName]->fAngle = std::bind(&ObjAttr_t::GetBody_fAngle,mapObjs[strObjName]);
-#if 0 // :x: for test
-  printf("\033[1;33m[%s][%d] :x: [Obj Tiles] %s  %d %f,%f,%f,%f,%f \033[m\n",
-      __FUNCTION__,__LINE__,
-      strObjName.c_str(),iTileIdx,
-      mapObjs[strObjName].fX_M(),
-      mapObjs[strObjName].fY_M(),
-      mapObjs[strObjName].fW_M(),
-      mapObjs[strObjName].fH_M(),  
-      mapObjs[strObjName].fAngle()
-      );
-#endif // :x: for test
 
   for (auto strTag : vecTag) {
     m_mapTagObj[strTag].push_back(mapObjs[strObjName]);
