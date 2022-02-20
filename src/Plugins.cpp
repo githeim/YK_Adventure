@@ -115,6 +115,45 @@ int ChangeTargetIdx(int &iSizeofTargets,int &iCurTarget,bool bDirection=true) {
   return 0;
 }
 
+/**
+ * @brief Get the list of contacted target bodies
+ *
+ * @param ObjDirectory[IN]
+ * @param vecTargetTags[IN]  
+ * @param pContacts[IN]
+ * @param vecContactedTargeBodies[OUT]
+ *
+ * @return the number contacted bodies
+ */
+int Get_Contacted_TargetBody(CObjDirectory &ObjDirectory, 
+    std::vector<std::string> &vecTargetTags,
+    b2ContactEdge* &pContacts, std::vector<ObjAttr_t*> &vecContactedTargeBodies) 
+{
+  vecContactedTargeBodies.clear();
+  if (pContacts == nullptr || vecTargetTags.size() == 0) 
+    return vecContactedTargeBodies.size();
+  if (pContacts) {
+    do {
+      // Fixture A's body ; the body that is applying force
+      b2Body* pBodyA = pContacts->contact->GetFixtureA()->GetBody();
+      // Fixture B's body ; the body that is received force 
+      b2Body* pBodyB = pContacts->contact->GetFixtureB()->GetBody();
+
+      ObjAttr_t* pContactedObj = nullptr;
+      // Check the tags
+      if (Chk_Tag(ObjDirectory,vecTargetTags,pBodyA,pContactedObj) || 
+          Chk_Tag(ObjDirectory,vecTargetTags,pBodyB,pContactedObj) ) {
+        printf("\033[1;33m[%s][%d] :x: COntacted %s \033[m\n",
+            __FUNCTION__,__LINE__,pContactedObj->strObjName.c_str());
+        vecContactedTargeBodies.push_back(pContactedObj);
+      }
+      pContacts = pContacts->next;
+    } while (pContacts);
+  }
+
+  return vecContactedTargeBodies.size();
+}
+
 int Get_AimingVectors (std::vector<b2Body*> &vecTargetBodies,
                 std::vector<b2Vec2> &vecAimings,b2Vec2 &vec2CurPos ) {
   vecAimings.clear();
@@ -236,9 +275,11 @@ int Plug_Missile(CPhysic_World* &pWorld,
             SDL_Event* &pEvt,double& dbTimeDiff,
             CPlugin* pInstance) {
   std::map<std::string, float> & Float_Common = pInstance->m_Float_Common;
+  float fDamage= 10.f;
   float fReactionRate_SEC = 0.1;
   b2Body* pBody = pInstance->m_pBody;
   b2Vec2 vec2CurPos_M=pBody->GetPosition();
+  std::shared_ptr<CApp> pApp =Get_pApp();
 
   b2Vec2 vec2Direction = AngleToVector(Float_Common["Direction_Degree"]); 
   pBody->SetTransform(vec2CurPos_M,-(Float_Common["Direction_Degree"]-90));
@@ -262,15 +303,21 @@ int Plug_Missile(CPhysic_World* &pWorld,
     std::vector<b2Body*> vecTargetBodies;
     Find_Bodies(vecTargetTags,fRange_M,vec2CurPos_M,vecTargetBodies,ObjDirectory);
     int iTargetBodySize = vecTargetBodies.size();
-    SDL_Color Color =COLOR_RED;
+    SDL_Color Color_RED =COLOR_RED;
+    SDL_Color Color_YELLOW =COLOR_YELLOW;
     if (iTargetBodySize > 0  ) {
       for (auto pTargetBody : vecTargetBodies) {
-        //b2Vec2 vec2TargetPos = pTargetBody->GetPosition();
-        b2Vec2 vec2TargetPos = vecTargetBodies[0]->GetPosition();
+        b2Vec2 vec2TargetPos = pTargetBody->GetPosition();
+        b2Vec2 vec2FirstTargetPos = vecTargetBodies[0]->GetPosition();
         Dbg_DrawLine_Scale(
             vec2CurPos_M.x, 
             vec2CurPos_M.y, 
-            vec2TargetPos.x, vec2TargetPos.y,Color);
+            vec2TargetPos.x, vec2TargetPos.y,Color_YELLOW);
+        Dbg_DrawLine_Scale(
+            vec2CurPos_M.x, 
+            vec2CurPos_M.y, 
+            vec2FirstTargetPos.x, vec2FirstTargetPos.y,Color_RED);
+
       }
       b2Vec2 vec2TargetDir =  vecTargetBodies[0]->GetPosition()-vec2CurPos_M;
       vec2TargetDir.Normalize();
@@ -286,33 +333,17 @@ int Plug_Missile(CPhysic_World* &pWorld,
 
     }
   }
-
+ 
+  std::vector<ObjAttr_t *> vecContactedTargeBodies;
   b2ContactEdge* pContacts = pBody->GetContactList();
-  if (pContacts) {
-    do {
-      // Fixture A's body ; the body that is applying force
-      b2Body* pBodyA = pContacts->contact->GetFixtureA()->GetBody();
-      // Fixture B's body ; the body that is received force 
-      b2Body* pBodyB = pContacts->contact->GetFixtureB()->GetBody();
-
-      ObjAttr_t* pContactedObj = nullptr;
-      // Check the tags
-      if (Chk_Tag(ObjDirectory,vecTargetTags,pBodyA,pContactedObj) || 
-          Chk_Tag(ObjDirectory,vecTargetTags,pBodyB,pContactedObj) ) {
-        // Destroy Obj
-        printf("\033[1;33m[%s][%d] :x: COntacted %s \033[m\n",
-            __FUNCTION__,__LINE__,pContactedObj->strObjName.c_str());
-        std::shared_ptr<CApp> pApp =Get_pApp();
-        // Attack contacted body
-        pContactedObj->pPlugin->m_Float_Common["Damage"]+=33;
-        // Remove Self body
-        pApp->Set_setObjToRemove(ObjDirectory.m_mapBody_Obj[pBody]);
-      }
-      pContacts = pContacts->next;
-    } while (pContacts);
+  if ( Get_Contacted_TargetBody(ObjDirectory, vecTargetTags, pContacts, vecContactedTargeBodies) ) {
+    for (auto pContactedObj : vecContactedTargeBodies) {
+    // Attack contacted body
+    pContactedObj->pPlugin->m_Float_Common["Damage"]+=fDamage;
+    }
+    // Remove Self body
+    pApp->Set_setObjToRemove(ObjDirectory.m_mapBody_Obj[pBody]);
   }
-
-
 
   if (pEvt) {
     // Input Event
@@ -342,7 +373,6 @@ int Plug_Missile(CPhysic_World* &pWorld,
 
 
   Float_Common["LifeTime"] -=dbTimeDiff;
-  std::shared_ptr<CApp> pApp =Get_pApp();
   if (pInstance->m_Float_Common["LifeTime"] < 0) {
     printf("\033[1;31m[%s][%d] :x: Die Bullet \033[m\n",__FUNCTION__,__LINE__);
     pApp->Set_setObjToRemove(ObjDirectory.m_mapBody_Obj[pBody]);
@@ -368,7 +398,7 @@ int Plug_Bullet(CPhysic_World* &pWorld,
   b2Body* pBody = pInstance->m_pBody;
   pInstance->m_Float_Common["LifeTime"]+=dbTimeDiff;
   // Damage point of the bullet
-  float fBulletDamage= 10.f;
+  float fDamage= 10.f;
   // Target to Attack
   std::vector<std::string> vecTargetTags ={
     "Enemy_Flyer",
@@ -382,33 +412,16 @@ int Plug_Bullet(CPhysic_World* &pWorld,
     return 0;
   }
 
-  // Apply damage to contacted body
+  std::vector<ObjAttr_t *> vecContactedTargeBodies;
   b2ContactEdge* pContacts = pBody->GetContactList();
-  if (pContacts) {
-    do {
-      // Fixture A's body ; the body that is applying force
-      b2Body* pBodyA = pContacts->contact->GetFixtureA()->GetBody();
-      // Fixture B's body ; the body that is received force 
-      b2Body* pBodyB = pContacts->contact->GetFixtureB()->GetBody();
-
-      ObjAttr_t* pContactedObj = nullptr;
-      // Check the tags
-      if (Chk_Tag(ObjDirectory,vecTargetTags,pBodyA,pContactedObj) || 
-          Chk_Tag(ObjDirectory,vecTargetTags,pBodyB,pContactedObj) ) {
-        // Destroy Obj
-        printf("\033[1;33m[%s][%d] :x: COntacted %s \033[m\n",
-            __FUNCTION__,__LINE__,pContactedObj->strObjName.c_str());
-        std::shared_ptr<CApp> pApp =Get_pApp();
-        // Attack contacted body
-        pContactedObj->pPlugin->m_Float_Common["Damage"]+=33;
-        // Remove Self body
-        pApp->Set_setObjToRemove(ObjDirectory.m_mapBody_Obj[pBody]);
-      }
-      pContacts = pContacts->next;
-    } while (pContacts);
+  if ( Get_Contacted_TargetBody(ObjDirectory, vecTargetTags, pContacts, vecContactedTargeBodies) ) {
+    for (auto pContactedObj : vecContactedTargeBodies) {
+    // Attack contacted body
+    pContactedObj->pPlugin->m_Float_Common["Damage"]+=fDamage;
+    }
+    // Remove Self body
+    pApp->Set_setObjToRemove(ObjDirectory.m_mapBody_Obj[pBody]);
   }
-
-
 
   return 0;
 }

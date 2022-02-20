@@ -13,6 +13,11 @@ int Dbg_DrawLine_Scale(float fAX_M,float fAY_M,
 int Dbg_DrawLine_Scale(float fAX_M,float fAY_M,
                        float fBX_M,float fBY_M,SDL_Color &Color
     );
+bool Chk_Tag(CObjDirectory &ObjDirectory,
+    std::vector<std::string> vecTargetTags,b2Body* pBody,
+    ObjAttr_t* &pContactedObj
+    );
+
 
 int Plug_Player01_Init(CPhysic_World* &pWorld,
                   CObjDirectory &ObjDirectory,
