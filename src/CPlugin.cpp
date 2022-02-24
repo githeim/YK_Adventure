@@ -1,6 +1,7 @@
 #include "CPlugin.h"
 #include "Plugins.h"
 
+
 /**
  * @brief Create Plugin instances & add created plugins to ObjDirectory variable
  *
@@ -27,17 +28,14 @@ int CreatePlugins_byObjDir(CObjDirectory &ObjDirectory)
       printf("\033[1;33m[%s][%d] :x: Tag %s \033[m\n",__FUNCTION__,__LINE__,strTag.c_str());
 
       if (strTag == "Player01") {
-        pInstance = new CPlugin();
+        pInstance = new CPlugin(strObjName);
         pInstance->m_pBody = pObj->pBody;
         printf("\033[1;33m[%s][%d] :x: player1 instance [%s]\033[m\n",
             __FUNCTION__,__LINE__,strObjName.c_str());
         pInstance->OnExecute = Plug_Player01;
-        
-printf("\033[1;31m[%s][%d] :x: chk \033[m\n",__FUNCTION__,__LINE__);
-
         pInstance->OnInit = Plug_Player01_Init;
       } else if (strTag == "Enemy_Ground_Tracker") {
-        pInstance = new CPlugin();
+        pInstance = new CPlugin(strObjName);
         pInstance->m_pBody = pObj->pBody;
         printf("\033[1;33m[%s][%d] :x: Enemy_Ground_Tracker instance [%s]\033[m\n",
             __FUNCTION__,__LINE__,strObjName.c_str());
@@ -46,7 +44,7 @@ printf("\033[1;31m[%s][%d] :x: chk \033[m\n",__FUNCTION__,__LINE__);
         pInstance->OnDeInit = Plug_Enemy_Ground_Tracker_DeInit;
 
       } else if (strTag == "Enemy_Flyer") {
-        pInstance = new CPlugin();
+        pInstance = new CPlugin(strObjName);
         pInstance->m_pBody = pObj->pBody;
         printf("\033[1;33m[%s][%d] :x: Enemy_Ground_Tracker instance [%s]\033[m\n",
             __FUNCTION__,__LINE__,strObjName.c_str());
@@ -55,7 +53,7 @@ printf("\033[1;31m[%s][%d] :x: chk \033[m\n",__FUNCTION__,__LINE__);
         pInstance->OnDeInit = Plug_Enemy_Flyer_DeInit;
       }
       else if (strTag == "Enemy_Spawner") {
-        pInstance = new CPlugin();
+        pInstance = new CPlugin(strObjName);
         pInstance->m_pBody = pObj->pBody;
         printf("\033[1;33m[%s][%d] :x: Enemy_Spawner instance [%s]\033[m\n",
             __FUNCTION__,__LINE__,strObjName.c_str());

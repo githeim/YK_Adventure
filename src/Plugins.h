@@ -5,6 +5,8 @@
 #include "CPlugin.h"
 #include "CApp.h"
 
+int Draw_Energy_Bar(float &fCurEnergy,float &fMaxEnergy,
+                    b2Vec2 &vec2CurPos,b2Vec2 &vec2Offset,float fBarSizeWidth_M);
 int Dbg_DrawPoint_Scale(float fX_M,float fY_M); 
 int Dbg_DrawPoint_Scale(float fX_M,float fY_M,SDL_Color &Color); 
 int Dbg_DrawLine_Scale(float fAX_M,float fAY_M,

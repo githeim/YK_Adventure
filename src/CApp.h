@@ -12,6 +12,12 @@
 #include "CPlugin.h"
 #include "ObjAttr.h"
 
+inline void MeterToPixel(float &fX_M,float &fY_M,float &fPixel_X,float &fPixel_Y,
+             float fScale_Pixel_per_Meter =WORLDSCALE_PIXEL_PER_METER) {
+  fPixel_X =  (float)((fX_M) *fScale_Pixel_per_Meter) +(SCREEN_WIDTH/2);
+  fPixel_Y = -(float)((fY_M) *fScale_Pixel_per_Meter) +(SCREEN_HEIGHT/2);
+  return;
+}
 
 // Sprite type (texture index --> m_mapTextures, sprite area)
 typedef std::tuple<int,SDL_Rect> Sprite_t;
@@ -72,6 +78,8 @@ public:
                        std::map<int, SDL_Texture*> &mapTextures,
                        SDL_Renderer* &pRenderer);
   void Draw_Sprite(int iPixel_X, int iPixel_Y, int iIdx,float fAngle); 
+  void Draw_Sprite_Scale(float fX_M, float fY_M, int iIdx, float fAngle); 
+  void Draw_Sprite_Scale(float fX_M, float fY_M, int iIdx); 
   void Draw_Sprite(int iPixel_X, int iPixel_Y, int iIdx);
   int  Draw_Point_Pixel(float fPixel_X,float fPixel_Y,SDL_Renderer* & pRenderer,
                         SDL_Color& Color);
@@ -83,16 +91,14 @@ public:
                         SDL_Renderer* pRenderer);
   int  Draw_Point_Scale(float fX_M,float fY_M,SDL_Color& Color);
   int  Draw_Point_Scale(float fX_M,float fY_M);
-  int  Draw_Line_Pixel(float fPixelA_X,float fPixelA_Y,
-                       float fPixelB_X,float fPixelB_Y,
-                       SDL_Renderer* & pRenderer );
+
   int  Draw_Line_Pixel(float fPixelA_X,float fPixelA_Y,
                        float fPixelB_X,float fPixelB_Y);
   int  Draw_Line_Pixel(float fPixelA_X,float fPixelA_Y,
                        float fPixelB_X,float fPixelB_Y,SDL_Color& Color);
   int  Draw_Line_Pixel(float fPixelA_X,float fPixelA_Y,
                        float fPixelB_X,float fPixelB_Y,SDL_Color& Color,
-                          SDL_Renderer* & pRenderer );
+                       SDL_Renderer* & pRenderer );
 
 
   int  Draw_Line_Scale(float fPixelA_X,float fPixelA_Y,
@@ -182,6 +188,7 @@ public:
 
   // Objects in the App
   CObjDirectory m_ObjDirectory;
+  SDL_Joystick* m_joy;
 };
 
 

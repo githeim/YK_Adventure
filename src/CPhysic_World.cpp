@@ -6,36 +6,12 @@ static float GetDistance(float fX1,float fY1, float fX2, float fY2) {
   return std::sqrt(pow(fX2 - fX1, 2) +
       pow(fY2 - fY1, 2) * 1.0);
 };
-#if 0 // :x: for test
-
-class WorldContactListener : public b2ContactListener
-{
-public:
-  WorldContactListener(CPhysic_World* pWorld):m_pPhysic_World(pWorld) {
-  }
-  ~WorldContactListener() {
-  }
-  
-  void BeginContact(b2Contact* contact) {
-
-  }
-
-  void EndContact(b2Contact* contact) {
-
-  }
-
-  CPhysic_World* m_pPhysic_World;
-};
-#endif // :x: for test
 
 int CPhysic_World::Create_World(TMX_Ctx & TMX_context,
                    CObjDirectory &ObjDirectory) {
   b2Vec2 gravity(0.0f,-10.0f);
   m_pWorld = new b2World(gravity);
-#if 0 // :x: for test
-  m_pContactListener = new WorldContactListener(this);
-  m_pWorld->SetContactListener(m_pContactListener);
-#endif // :x: for test
+
   // Create body define
   Create_BodyDefs(m_mapBodyDef);
   // Create edge shape
@@ -121,8 +97,6 @@ int CPhysic_World::Destroy_World() {
     delete EdgeShape.second;
   }
 
-  if (m_pContactListener)
-    delete m_pContactListener;
 
   delete m_pWorld;
   return 0;
@@ -186,13 +160,12 @@ std::string CPhysic_World::Create_Element(TMX_Ctx &TMX_context, int iTileIdx,
 
       float fAngle =0;
       pBody = m_pWorld->CreateBody(m_mapBodyDef["dynamic_tile"]);
-#if 1 // :x: for test
-      if (pBody == pBody->GetNext()) {
-        printf("\033[1;31m[%s][%d] :x: Error Case!!!! %p \033[m\n",__FUNCTION__,__LINE__,pBody);
+      if (pBody == pBody->GetNext()) //this causes infinite loop in physic engine
+      { 
+        printf("\033[1;31m[%s][%d] :x: Error Case!!!! %p \033[m\n",
+                                                   __FUNCTION__,__LINE__,pBody);
         return std::string("Error");
-
       }
-#endif // :x: for test
 
 
       std::string strTag;
@@ -200,7 +173,6 @@ std::string CPhysic_World::Create_Element(TMX_Ctx &TMX_context, int iTileIdx,
       vecTag.clear();
       if (!CTMX_Reader::GetTag(TMX_context, iTileIdx, strTag)) {
         printf("\033[1;32m[%s][%d] :x: Tag %s \033[m\n",__FUNCTION__,__LINE__,strTag.c_str());
-        m_mapTags[strTag].push_back(pBody); 
         vecTag.push_back(strTag);
       }
       char pBuf[256]={}; 

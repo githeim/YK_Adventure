@@ -3,7 +3,7 @@ int Init_SDL_ctx(SDL_Window* &pWindow, SDL_Renderer* &pRenderer) {
   pWindow = NULL;
 
   //Initialize SDL
-  if( SDL_Init( SDL_INIT_VIDEO ) < 0 )
+  if( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_JOYSTICK ) < 0 )
   {
     printf("\033[1;31m[%s][%d] :x: Could not Init SDL2 [%s] \033[m\n",
         __FUNCTION__,__LINE__, SDL_GetError());

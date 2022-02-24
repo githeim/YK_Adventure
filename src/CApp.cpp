@@ -203,7 +203,6 @@ int CApp::OnExecute(SDL_Renderer* pRenderer) {
           case SDLK_q:
             bQuit = true;
             break;
-
           case SDLK_d:
             break;
           case SDLK_LEFT:
@@ -296,6 +295,25 @@ void CApp::Draw_Sprite(int iPixel_X, int iPixel_Y, int iIdx) {
       0.0f);
 };
 
+
+/**
+ * @brief Draw sprite by scale - x meter, y meter 
+ *
+ * @param iPixel_X
+ * @param iPixel_Y
+ * @param iIdx
+ */
+void CApp::Draw_Sprite_Scale(float fX_M, float fY_M, int iIdx) {
+
+  return Draw_Sprite_Scale(fX_M,fY_M, iIdx, 0.0f);
+};
+
+void CApp::Draw_Sprite_Scale(float fX_M, float fY_M, int iIdx,float fAngle) {
+  float fPixel_X,fPixel_Y;
+  MeterToPixel(fX_M,fY_M,fPixel_X,fPixel_Y);
+  return Draw_Sprite(fPixel_X,fPixel_Y,iIdx,fAngle);
+}
+
 int CApp::Draw_Line_Pixel(float fPixelA_X,float fPixelA_Y,
                           float fPixelB_X,float fPixelB_Y,SDL_Color& Color,
                           SDL_Renderer* & pRenderer )
@@ -309,27 +327,18 @@ int CApp::Draw_Line_Pixel(float fPixelA_X,float fPixelA_Y,
 }
 
 int CApp:: Draw_Line_Pixel(float fPixelA_X,float fPixelA_Y,
-                       float fPixelB_X,float fPixelB_Y,SDL_Color& Color) {
+                           float fPixelB_X,float fPixelB_Y,SDL_Color& Color) {
   return Draw_Line_Pixel(
-                        fPixelA_X, fPixelA_Y, fPixelB_X, fPixelB_Y,Color,m_pRenderer);
+                        fPixelA_X, fPixelA_Y, fPixelB_X, fPixelB_Y,
+                        Color,m_pRenderer);
 }
 
 int CApp::Draw_Line_Pixel(float fPixelA_X,float fPixelA_Y,
-                          float fPixelB_X,float fPixelB_Y,
-                          SDL_Renderer* & pRenderer )
-{
-  float fAX = fPixelA_X+std::get<0>(m_DisplayOffSet);
-  float fAY = fPixelA_Y+std::get<1>(m_DisplayOffSet);
-  float fBX = fPixelB_X+std::get<0>(m_DisplayOffSet);
-  float fBY = fPixelB_Y+std::get<1>(m_DisplayOffSet);
-  SDL_SetRenderDrawColor(pRenderer,0, 255, 0, SDL_ALPHA_OPAQUE);
-  return SDL_RenderDrawLine(pRenderer, fAX, fAY, fBX, fBY);
-}
-int CApp::Draw_Line_Pixel(float fPixelA_X,float fPixelA_Y,
                           float fPixelB_X,float fPixelB_Y)
 {
-  return Draw_Line_Pixel(
-                        fPixelA_X, fPixelA_Y, fPixelB_X, fPixelB_Y,m_pRenderer);
+  SDL_Color Color = COLOR_DEFAULT;
+  return Draw_Line_Pixel(fPixelA_X, fPixelA_Y, fPixelB_X, fPixelB_Y,
+                         Color,m_pRenderer);
 }
 int CApp::Draw_Line_Scale(float fAX_M, float fAY_M, 
                           float fBX_M, float fBY_M, SDL_Color &Color) {
@@ -342,12 +351,10 @@ int CApp::Draw_Line_Scale(float fAX_M, float fAY_M,
                           float fBX_M, float fBY_M, SDL_Color &Color,
                           CPhysic_World *pWorld, SDL_Renderer *pRenderer) {
   float fScale_Pixel_per_Meter = pWorld->m_fScale_Pixel_per_Meter;
-  float fPixelA_X =  (int)((fAX_M) *fScale_Pixel_per_Meter) +(SCREEN_WIDTH/2);
-  float fPixelA_Y = -(int)((fAY_M) *fScale_Pixel_per_Meter) +(SCREEN_HEIGHT/2);
 
-  float fPixelB_X =  (int)((fBX_M) *fScale_Pixel_per_Meter) +(SCREEN_WIDTH/2);
-  float fPixelB_Y = -(int)((fBY_M) *fScale_Pixel_per_Meter) +(SCREEN_HEIGHT/2);
-
+  float fPixelA_X,fPixelA_Y,fPixelB_X,fPixelB_Y ;
+  MeterToPixel(fAX_M,fAY_M,fPixelA_X,fPixelA_Y,fScale_Pixel_per_Meter);
+  MeterToPixel(fBX_M,fBY_M,fPixelB_X,fPixelB_Y,fScale_Pixel_per_Meter);
   Draw_Line_Pixel(fPixelA_X,fPixelA_Y,fPixelB_X,fPixelB_Y,Color,pRenderer);
 
   return 0;
@@ -357,15 +364,8 @@ int CApp::Draw_Line_Scale(float fAX_M, float fAY_M,
 int CApp::Draw_Line_Scale(float fAX_M, float fAY_M, 
                           float fBX_M, float fBY_M, 
                           CPhysic_World *pWorld, SDL_Renderer *pRenderer) {
-  float fScale_Pixel_per_Meter = pWorld->m_fScale_Pixel_per_Meter;
-  float fPixelA_X =  (int)((fAX_M) *fScale_Pixel_per_Meter) +(SCREEN_WIDTH/2);
-  float fPixelA_Y = -(int)((fAY_M) *fScale_Pixel_per_Meter) +(SCREEN_HEIGHT/2);
-
-  float fPixelB_X =  (int)((fBX_M) *fScale_Pixel_per_Meter) +(SCREEN_WIDTH/2);
-  float fPixelB_Y = -(int)((fBY_M) *fScale_Pixel_per_Meter) +(SCREEN_HEIGHT/2);
-
-  Draw_Line_Pixel(fPixelA_X,fPixelA_Y,fPixelB_X,fPixelB_Y,pRenderer);
-
+  SDL_Color Color = COLOR_DEFAULT;
+  Draw_Line_Scale(fAX_M,fAY_M,fBX_M,fBY_M,Color,pWorld,pRenderer);
   return 0;
 }
 
@@ -373,22 +373,20 @@ int CApp::Draw_Line_Scale(float fPixelA_X, float fPixelA_Y,
                           float fPixelB_X, float fPixelB_Y) {
   return Draw_Line_Scale(fPixelA_X, fPixelA_Y, fPixelB_X, fPixelB_Y, 
                          m_pWorld, m_pRenderer);
-
 }
-int  CApp::Draw_Point_Pixel(float fPixel_X,float fPixel_Y,SDL_Renderer* & pRenderer,
-                        SDL_Color& Color)
+int  CApp::Draw_Point_Pixel(float fPixel_X,float fPixel_Y,
+                            SDL_Renderer* & pRenderer,
+                            SDL_Color& Color)
 {
   float fX = fPixel_X+std::get<0>(m_DisplayOffSet);
   float fY = fPixel_Y+std::get<1>(m_DisplayOffSet);
-
   SDL_SetRenderDrawColor(pRenderer,Color.r,Color.g,Color.b,Color.a);
-
+  // Cross shape point
   SDL_RenderDrawPoint(pRenderer,fX,   fY);
   SDL_RenderDrawPoint(pRenderer,fX-1, fY);
   SDL_RenderDrawPoint(pRenderer,fX+1, fY);
   SDL_RenderDrawPoint(pRenderer,fX,   fY-1);
   SDL_RenderDrawPoint(pRenderer,fX,   fY+1);
-
   return 0;
 }
 
@@ -405,9 +403,8 @@ int CApp::Draw_Point_Pixel(float fPixel_X,float fPixel_Y) {
 int CApp::Draw_Point_Scale(float fX_M,float fY_M,CPhysic_World* pWorld,
                            SDL_Color& Color,SDL_Renderer* pRenderer) {
   float fScale_Pixel_per_Meter = pWorld->m_fScale_Pixel_per_Meter;
-  float fPixel_X =  (int)((fX_M) *fScale_Pixel_per_Meter) +(SCREEN_WIDTH/2);
-  float fPixel_Y = -(int)((fY_M) *fScale_Pixel_per_Meter) +(SCREEN_HEIGHT/2);
-
+  float fPixel_X,fPixel_Y; 
+  MeterToPixel(fX_M,fY_M,fPixel_X,fPixel_Y,fScale_Pixel_per_Meter);
   return Draw_Point_Pixel(fPixel_X,fPixel_Y,pRenderer,Color);
 }
 
@@ -458,15 +455,17 @@ int CApp::Draw_World(CPhysic_World* pWorld,SDL_Renderer* pRenderer) {
       float fWidth  = Obj.fW_M();
       float fHeight = Obj.fH_M();
       float fAngle  = Obj.fAngle();
-
-      int iPixel_X = (int)((fX_M-fWidth/2.0f) *fScale_Pixel_per_Meter) +(SCREEN_WIDTH/2);
-      int iPixel_Y = -(int)((fY_M+fHeight/2.0f) *fScale_Pixel_per_Meter)+(SCREEN_HEIGHT/2);
+      int iPixel_X = 
+           (int)((fX_M-fWidth/2.0f) *fScale_Pixel_per_Meter) +(SCREEN_WIDTH/2);
+      int iPixel_Y = 
+          -(int)((fY_M+fHeight/2.0f) *fScale_Pixel_per_Meter)+(SCREEN_HEIGHT/2);
       // do not draw background's vector
       if (Obj.strPhysicType=="Background" && m_bTileDraw == false)
         m_bVectorDraw = false;
       Draw_Sprite(iPixel_X, iPixel_Y, iIdx, fAngle);
       if (Obj.strPhysicType=="Background" && m_bTileDraw == false)
         m_bVectorDraw = true;
+
     }
   }
 

@@ -205,4 +205,12 @@
    <property name="Tag" value="Bullet"/>
   </properties>
  </tile>
+ <tile id="30">
+  <properties>
+   <property name="PhysicSize_H" value="8"/>
+   <property name="PhysicSize_W" value="8"/>
+   <property name="PhysicSize_X" value="8"/>
+   <property name="PhysicSize_Y" value="8"/>
+  </properties>
+ </tile>
 </tileset>

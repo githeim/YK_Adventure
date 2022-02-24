@@ -6,11 +6,12 @@
 
 #include"ObjAttr.h"
 
+#define WORLDSCALE_PIXEL_PER_METER (18.f)
 class WorldContactListener;
 class CPhysic_World {
 public:
   CPhysic_World(TMX_Ctx & TMX_context, CObjDirectory &ObjDirectory,
-      float fWorldScale_Pixel_per_Meter=18.f) {
+      float fWorldScale_Pixel_per_Meter=WORLDSCALE_PIXEL_PER_METER) {
     m_fScale_Pixel_per_Meter = fWorldScale_Pixel_per_Meter;
     if ( Create_World(TMX_context,ObjDirectory)) {
       printf("\033[1;31m[%s][%d] :x: Err on create world \033[m\n",
@@ -70,14 +71,11 @@ public:
   std::map<std::string,b2PolygonShape*> m_mapPolygonShape;
   std::map<std::string,b2EdgeShape*>    m_mapEdgeshape;
 
-           // Tag          body
-  std::map<std::string,std::vector<b2Body*>> m_mapTags;
   // Map variable that is mapping tag - Objects
            // Tag          Object
   std::map<std::string,std::vector<ObjAttr_t*>> m_mapTagObj;
 
   float m_fScale_Pixel_per_Meter;
-  WorldContactListener* m_pContactListener = nullptr;
   int m_iObjCnt =0;
 };
 
