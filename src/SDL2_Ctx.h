@@ -9,6 +9,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_mixer.h>
 
 #include "TMX_Reader/CTMX_Reader.h"
 
@@ -45,4 +46,6 @@ int DeInit_SDL_ctx(SDL_Window* &pWindow, SDL_Renderer* &pRenderer);
 int Init_Fonts(TTF_Font* &pFont,int iFontSize = 18); 
 int DeInit_Fonts(TTF_Font* &pFont); 
 double Frame_Rate_Control(double dbFPS,double &dbTimeDiff_SEC);
+void Check_Joystick(double dbTimeDiff); 
+void Play_Sound(std::string strSound); 
 #endif /* ifndef _SDL2_CTX_H_ */

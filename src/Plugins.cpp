@@ -27,12 +27,6 @@ double AngleBetweenVec2(b2Vec2 &vec2A,b2Vec2 &vec2B) {
   return (atan2(vec2B.y,vec2B.x) - atan2(vec2A.y,vec2A.x))*180/M_PI;
 }
 
-static b2Vec2 PixelToCoord_M(int iPixel_X, int iPixel_Y,float fScale_Pixel_per_Meter,int iScreenWidth =SCREEN_WIDTH ) {
-  float fX_M =  (iPixel_X-(float)(SCREEN_WIDTH/2.f)) / fScale_Pixel_per_Meter;
-  float fY_M = -(iPixel_Y -(SCREEN_HEIGHT/2))        / fScale_Pixel_per_Meter;
-  return b2Vec2(fX_M,fY_M);
-}
-
 void Print_Bodies(b2Body* pBody) {
   for (b2Body* b = pBody; b; b = b->GetNext())
   {
@@ -369,6 +363,7 @@ int Plug_Missile(CPhysic_World* &pWorld,
         pContactedObj->pPlugin->m_Float_Common["Damage"]+=fFirePower;
         Vec2_Common["HitPos"]=pContactedObj->pBody->GetPosition();
         Int_Common["DamageFlag"] = true;
+        Play_Sound("boom");
         Float_Common["LifeTime"] = Float_Common["HitFlameTime"];
       }
     }
@@ -386,6 +381,7 @@ int Plug_Missile(CPhysic_World* &pWorld,
         Vec2_Common["HitPos"].y+(1.33/2), 212);
     if (Float_Common["LifeTime"] < 0) {
       printf("\033[1;31m[%s][%d] :x: Die Missile \033[m\n",__FUNCTION__,__LINE__);
+      Play_Sound("boom");
       pApp->Set_setObjToRemove(ObjDirectory.m_mapBody_Obj[pBody]);
       return 0;
     } 
@@ -520,6 +516,7 @@ int Plug_Bullet(CPhysic_World* &pWorld,
         // Attack contacted body
         pContactedObj->pPlugin->m_Float_Common["Damage"]+=fFirePower;
         Vec2_Common["HitPos"]=pContactedObj->pBody->GetPosition();
+        Play_Sound("boom");
         break;
       }
       // Remove Self body
@@ -647,6 +644,7 @@ int Spawn_Bullet(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory,
 
   ObjDirectory.UpdateDirectory();
 
+  Play_Sound("tang");
   return 0;
 }
 
@@ -667,16 +665,21 @@ int Spawn_Bullet(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory,
                       fImpulse,vecTargets);
 }
 
+
 int Plug_Player01_Init(CPhysic_World* &pWorld,
                         CObjDirectory &ObjDirectory,
                         SDL_Event* &pEvt,double& dbTimeDiff,
                         CPlugin* pInstance) {
 
+  std::map<std::string, int> & Int_Common = pInstance->m_Int_Common;
   std::map<std::string, float> & Float_Common = pInstance->m_Float_Common;
   std::map<std::string,std::vector<std::string>> & Str_Vec_Common = 
                                                     pInstance->m_Str_Vec_Common;
-  pInstance->m_Int_Common["AimingState"] = MOUSE_AIMING;
-  pInstance->m_Int_Common["AimingTarget"] = 0;
+  //Int_Common["AimingState"] = MOUSE_AIMING;
+  Int_Common["AimingState"] = AUTO_AIMING;
+  Int_Common["AimingTarget"] = 0;
+  // Joystick Input index
+  Int_Common["JoystickInputIdx"]=0;
   Float_Common["Energy"]= 100;
   Float_Common["TotalEnergy"] = 100;
   Float_Common["Damage"]= 0;
@@ -686,7 +689,31 @@ int Plug_Player01_Init(CPhysic_World* &pWorld,
 
   Str_Vec_Common["Targets"]= { "Enemy_Flyer",
                                "Enemy_Ground_Tracker"};
+  return 0;
+}
+int Plug_Player02_Init(CPhysic_World* &pWorld,
+                        CObjDirectory &ObjDirectory,
+                        SDL_Event* &pEvt,double& dbTimeDiff,
+                        CPlugin* pInstance) {
 
+  std::map<std::string, int> & Int_Common = pInstance->m_Int_Common;
+  std::map<std::string, float> & Float_Common = pInstance->m_Float_Common;
+  std::map<std::string,std::vector<std::string>> & Str_Vec_Common = 
+                                                    pInstance->m_Str_Vec_Common;
+  //Int_Common["AimingState"] = MOUSE_AIMING;
+  Int_Common["AimingState"] = AUTO_AIMING;
+  Int_Common["AimingTarget"] = 0;
+  // Joystick Input index
+  Int_Common["JoystickInputIdx"]=1;
+  Float_Common["Energy"]= 100;
+  Float_Common["TotalEnergy"] = 100;
+  Float_Common["Damage"]= 0;
+
+  Float_Common["BulletImpulse"]= 200.f;
+  Float_Common["RecoilRate"]= 0.1f;
+
+  Str_Vec_Common["Targets"]= { "Enemy_Flyer",
+                               "Enemy_Ground_Tracker"};
   return 0;
 }
 
@@ -700,6 +727,8 @@ int Plug_Player01(CPhysic_World* &pWorld,
   std::map<std::string, float> & Float_Common = pInstance->m_Float_Common;
   std::map<std::string,std::vector<std::string>> & Str_Vec_Common = 
                                                     pInstance->m_Str_Vec_Common;
+  std::map<std::string, int> & Int_Common = pInstance->m_Int_Common;
+  std::shared_ptr<CApp> pApp =Get_pApp();
 
   // Find Player 1 Body, it should be one
   b2Body* pBody = pInstance->m_pBody;
@@ -710,6 +739,8 @@ int Plug_Player01(CPhysic_World* &pWorld,
   float fJumpImpulse = fMass * 7.0;
   float fMoveSpeed = 6.0;
 
+  // Joystick input Idx
+  int iJoyIdx = Int_Common["JoystickInputIdx"]; 
   static  bool bPrevIsGround = false;
   bool bIsGround=false; 
   bool bIsFly=false; 
@@ -823,7 +854,7 @@ int Plug_Player01(CPhysic_World* &pWorld,
   int x, y;
   SDL_GetMouseState(&x, &y);
   float fScale_Pixel_per_Meter = pWorld->m_fScale_Pixel_per_Meter;
-  b2Vec2 vec2Cursor_M = PixelToCoord_M(x,y,fScale_Pixel_per_Meter);
+  b2Vec2 vec2Cursor_M = PixelToMeter(x,y,fScale_Pixel_per_Meter);
   vec2MouseAiming =   vec2Cursor_M-vec2CurPos_M;
   vec2MouseAiming.Normalize();
 
@@ -844,7 +875,81 @@ int Plug_Player01(CPhysic_World* &pWorld,
   float fImpulse = Float_Common["BulletImpulse"];
   vec2BulletRecoil*=-(fImpulse*Float_Common["RecoilRate"]);// recoil
   if (pEvt) {
+    
     // Input Event
+    if( pEvt->type == SDL_JOYAXISMOTION && pEvt->jaxis.which == iJoyIdx) {
+      printf("\033[1;32m[%s][%d] :x: Joy[%d] %d %d \033[m\n",
+          __FUNCTION__,__LINE__,pEvt->jaxis.which,pEvt->jaxis.axis,pEvt->jaxis.value);
+      
+      if (pEvt->jaxis.axis == 0 ) { // axis X 
+        if (pEvt->jaxis.value < 0) {
+          printf("\033[1;33m[%s][%d] :x: Left \033[m\n",__FUNCTION__,__LINE__);
+
+            pBody->SetLinearVelocity(b2Vec2( -fMoveSpeed,vecVelocity.y));
+        }
+        if (pEvt->jaxis.value > 0) {
+          printf("\033[1;33m[%s][%d] :x: Right \033[m\n",__FUNCTION__,__LINE__);
+            pBody->SetLinearVelocity(b2Vec2(  fMoveSpeed,vecVelocity.y));
+        }
+        if (pEvt->jaxis.value == 0) {
+          if (bIsGround)
+            pBody->SetLinearVelocity(b2Vec2(  0,vecVelocity.y));
+        }
+      }
+
+      if (pEvt->jaxis.axis == 1 ) { // axis Y  
+        if (pEvt->jaxis.value < 0) {
+          printf("\033[1;33m[%s][%d] :x: Up \033[m\n",__FUNCTION__,__LINE__);
+
+        }
+        if (pEvt->jaxis.value > 0) {
+          printf("\033[1;33m[%s][%d] :x: Down \033[m\n",__FUNCTION__,__LINE__);
+        }
+
+      }
+    }
+  
+    if( pEvt->type == SDL_JOYBUTTONDOWN && pEvt->jbutton.which == iJoyIdx) {
+      printf("\033[1;33m[%s][%d] :x: Joy [%d] Button %d \033[m\n",
+          __FUNCTION__,__LINE__,pEvt->jbutton.which,pEvt->jbutton.button);
+      switch(pEvt->jbutton.button) {
+        case 0:
+          // Button 1 
+          // Shot Missile
+          if (!Spawn_Missile(pWorld,ObjDirectory,vec2CurPos_M,
+                vec2MissileDirection,vecTargetTags)) {
+          }
+          break;
+        case 1:
+          // Button 2 
+          // Shot Bullet
+          if (!Spawn_Bullet(pWorld,ObjDirectory,vec2CurPos_M,
+                vec2BulletDirection,fImpulse,vecTargetTags)) {
+            // Recoil
+            pBody->ApplyLinearImpulseToCenter(vec2BulletRecoil, true);
+          }
+          break;
+        case 2:
+          // Button 3 
+          // Jump
+          if (bIsGround || bIsFly ) 
+          {
+            pBody->ApplyLinearImpulseToCenter(b2Vec2(0,fJumpImpulse), true);
+          }
+          break;
+        case 4:
+          // Button L1
+          // change target 
+          ChangeTargetIdx(iTargetBodySize,pInstance->m_Int_Common["AimingTarget"],true);
+          break;
+        case 5:
+          // Button R1
+          // change target 
+          ChangeTargetIdx(iTargetBodySize,pInstance->m_Int_Common["AimingTarget"],false);
+          break;
+      }
+    }
+
     if( pEvt->type == SDL_KEYDOWN )
     {
       if (
@@ -950,15 +1055,33 @@ int Plug_Player01(CPhysic_World* &pWorld,
     return 0;
   }
 
+  if ( Float_Common["Energy"] < 0) {
+    pApp->Set_setObjToRemove(ObjDirectory.m_mapBody_Obj[pBody]);
+    return 0;
+  } else {
+    // Draw Energy
+    float fObjWidth =
+                ObjDirectory.m_mapObjs[pInstance->m_strObjName]->GetTile_fW_M();
+    float fObjHeight =
+                ObjDirectory.m_mapObjs[pInstance->m_strObjName]->GetTile_fH_M();
+    b2Vec2 vec2Offset(-(fObjWidth/2),-(fObjHeight/2)-0.2);
+    float fEnergyRate =Float_Common["Energy"]/Float_Common["TotalEnergy"]; 
+    Draw_Energy_Bar(fEnergyRate,
+        vec2CurPos_M,vec2Offset,fObjWidth*1);
+  }
+#if 0 // :x: for test
 
   // Draw Energy
   float fObjWidth =
     ObjDirectory.m_mapObjs[pInstance->m_strObjName]->GetTile_fW_M();
   float fObjHeight =
     ObjDirectory.m_mapObjs[pInstance->m_strObjName]->GetTile_fH_M();
-  b2Vec2 vec2Offset(-(fObjWidth/2),-(fObjHeight/2));
-      Draw_Energy_Bar(Float_Common["Energy"] ,Float_Common["TotalEnergy"],
-          vec2CurPos_M,vec2Offset,fObjWidth*1.5);
+
+  b2Vec2 vec2Offset(-(fObjWidth/2),-(fObjHeight/2)-0.2);
+  float fEnergyRate =Float_Common["Energy"]/Float_Common["TotalEnergy"]; 
+  Draw_Energy_Bar(fEnergyRate,
+      vec2CurPos_M,vec2Offset,fObjWidth*1.0);
+#endif // :x: for test
 
   return 0;
 
@@ -971,15 +1094,30 @@ int Plug_Enemy_Flyer_Init(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory,
   printf("\033[1;33m[%s][%d] :x: Init Enemy_Flyer \033[m\n",
       __FUNCTION__,__LINE__);
   std::map<std::string, float> & Float_Common = pInstance->m_Float_Common;
+  std::map<std::string, std::vector<std::string>> & Str_Vec_Common = 
+                                                    pInstance->m_Str_Vec_Common;
+
 
   // Initiation
   Float_Common["InputTimeDiff"]= 0.f;
   Float_Common["ReactionTimeDiff"]= 0.f;
 
+  // character reaction time
+  Float_Common["ReactionTime"]= 0.8f;
+
   Float_Common["TotalEnergy"]= 100;
   Float_Common["Energy"] = Float_Common["TotalEnergy"];
   Float_Common["Damage"] = 0;
-  
+
+  Float_Common["BulletImpulse"]= 200.f;
+  Float_Common["RecoilRate"]= 0.015f;
+
+ 
+
+  Str_Vec_Common["Targets"]= { "Player01","Player02",
+                               "Missile_Player"
+                               };
+
   return 0;
 }
 
@@ -999,11 +1137,13 @@ int Plug_Enemy_Flyer(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory,
                        double& dbTimeDiff, CPlugin* pInstance) {
   std::map<std::string, float> & Float_Common = pInstance->m_Float_Common;
   std::map<std::string, std::string> &Str_Common =pInstance->m_Str_Common;
+  std::map<std::string, std::vector<std::string>> & Str_Vec_Common = 
+                                                    pInstance->m_Str_Vec_Common;
+
   std::shared_ptr<CApp> pApp =Get_pApp();
   // character control rate --> 0.5 sec
   float fCtrlRate_SEC = 0.5;
-  // character reaction rate --> 0.8 sec
-  float fReactionRate_SEC = 0.3;
+  float fReactionRate_SEC =Float_Common["ReactionTime"];
   // Target Search Range (Meter)
   float fRange_M = 35.f;
   float fMoveSpeed = 3.0;
@@ -1042,6 +1182,8 @@ int Plug_Enemy_Flyer(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory,
     }
     pBody->SetLinearVelocity(b2Vec2( fMoveSpeed_X,fMoveSpeed_Y));
     
+
+
   }
   Float_Common["ReactionTimeDiff"] +=dbTimeDiff;
   if (Float_Common["ReactionTimeDiff"] > fReactionRate_SEC ) {
@@ -1050,7 +1192,7 @@ int Plug_Enemy_Flyer(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory,
     // Find Targets
 
     // Targets are players
-    std::vector<std::string> vecTargetTags = { "Player01","Player02" };
+    std::vector<std::string> &vecTargetTags = Str_Vec_Common["Targets"];
     std::vector<b2Body*> vecTargetBodies;
     Find_Bodies(vecTargetTags,fRange_M,vec2CurPos_M,vecTargetBodies,ObjDirectory);
 
@@ -1075,6 +1217,21 @@ int Plug_Enemy_Flyer(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory,
       {
         Str_Common["Direction_Y"] = "Plus";
       }
+
+#if 1 // :x: for test
+      // Fire To target
+      b2Vec2 vec2CurPos_M = pBody->GetPosition();
+      b2Vec2 vec2Aim = vec2TargetPos-vec2CurPos_M;
+      float fImpulse = Float_Common["BulletImpulse"];
+      b2Vec2 vec2BulletRecoil =vec2Aim;
+      vec2BulletRecoil*=-(fImpulse*Float_Common["RecoilRate"]);// recoil
+      vec2Aim.Normalize();
+      if (!Spawn_Bullet(pWorld,ObjDirectory,vec2CurPos_M,
+            vec2Aim,fImpulse,vecTargetTags)) {
+        // Recoil
+        pBody->ApplyLinearImpulseToCenter(vec2BulletRecoil, true);
+      }
+#endif // :x: for test
     } else
     {
       Str_Common["Direction_X"] = "Stop";
@@ -1090,6 +1247,7 @@ int Plug_Enemy_Flyer(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory,
   }
   if ( Float_Common["Energy"] < 0) {
     pApp->Set_setObjToRemove(ObjDirectory.m_mapBody_Obj[pBody]);
+    Play_Sound("boom");
     return 0;
   } else {
     // Draw Energy
@@ -1097,9 +1255,10 @@ int Plug_Enemy_Flyer(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory,
                 ObjDirectory.m_mapObjs[pInstance->m_strObjName]->GetTile_fW_M();
     float fObjHeight =
                 ObjDirectory.m_mapObjs[pInstance->m_strObjName]->GetTile_fH_M();
-    b2Vec2 vec2Offset(-(fObjWidth/2),-(fObjHeight/2));
-//    Draw_Energy_Bar(Float_Common["Energy"] ,Float_Common["TotalEnergy"],
-//        vec2CurPos_M,vec2Offset,fObjWidth*1.5);
+    b2Vec2 vec2Offset(-(fObjWidth/2),-(fObjHeight/2)-0.2);
+    float fEnergyRate =Float_Common["Energy"]/Float_Common["TotalEnergy"]; 
+    Draw_Energy_Bar(fEnergyRate,
+        vec2CurPos_M,vec2Offset,fObjWidth*1);
   }
   return 0;
 }
@@ -1116,8 +1275,9 @@ int Plug_Enemy_Ground_Tracker_Init(CPhysic_World* &pWorld,
   // Initiation
   Float_Common["InputTimeDiff"]= 0.f;
   Float_Common["ReactionTimeDiff"]= 0.f;
-  Float_Common["ReactionTime"]= 0.5f;
-  Float_Common["Energy"]= 100;
+  Float_Common["ReactionTime"]= 0.7f;
+  Float_Common["TotalEnergy"]= 100;
+  Float_Common["Energy"] = Float_Common["TotalEnergy"];
   Float_Common["Damage"]= 0;
 
   Float_Common["BulletImpulse"]= 200.f;
@@ -1258,6 +1418,8 @@ int Plug_Enemy_Ground_Tracker(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory
   }
   if ( Float_Common["Energy"] < 0) {
     std::shared_ptr<CApp> pApp =Get_pApp();
+    Play_Sound("boom");
+
     pApp->Set_setObjToRemove(ObjDirectory.m_mapBody_Obj[pBody]);
     return 0;
   }
@@ -1314,60 +1476,59 @@ int Plug_Spawner(CPhysic_World* &pWorld,
 
   return 0;
 }
-
-int Draw_Energy_Bar(float &fCurEnergy,float &fMaxEnergy,
-                    b2Vec2 &vec2CurPos,b2Vec2 &vec2Offset,float fBarSizeWidth_M
+int Draw_Energy_Bar(float fEnergyRate, 
+                    b2Vec2 &vec2Pos_Pixel,
+                    float fBarSizeWidth_Pixel,float fBarSizeHeight_Pixel
                     ) {
-#if 1 // :x: for test
-
-  int iSizeHeight_Pixel=13;
-  //float fWidthBorder=1.0f;
-  //float fHeightBorder=1.0f;
-
-  SDL_Color BarColor = COLOR_RED;
+  int iSizeHeight_Pixel=fBarSizeHeight_Pixel;
+  float fBarSize = fEnergyRate *fBarSizeWidth_Pixel;
   SDL_Color BorderColor = COLOR_DARK_GRAY;
-  if ((fCurEnergy / fMaxEnergy)>0.8) {
+  SDL_Color BarColor = COLOR_RED;
+  if (fEnergyRate>0.8) {
     BarColor = COLOR_GREEN;
   } else 
-  if ((fCurEnergy / fMaxEnergy)>0.4) {
+  if (fEnergyRate>0.4) {
     BarColor = COLOR_YELLOW;
   } 
-
-  float fBarSize = (fCurEnergy / fMaxEnergy)*fBarSizeWidth_M;
-  b2Vec2 vec2BarSize = {fBarSize,0};
-
-  b2Vec2 vec2LineStartPos = vec2CurPos+vec2Offset;
-  b2Vec2 vec2LineEndPos= vec2LineStartPos + vec2BarSize;
-  Dbg_DrawPoint_Scale(vec2LineEndPos.x, vec2LineEndPos.y);
-
-Dbg_DrawLine_Scale(vec2LineStartPos.x,
-                   vec2LineStartPos.y,
-                   vec2LineEndPos.x,
-                   vec2LineEndPos.y,BarColor);
-
-
-//  Dbg_DrawLine_Scale(vec2LineStartPos.x,
-//                     vec2LineStartPos.y,
-//                     vec2LineEndPos.x,
-//                     vec2LineEndPos.y,BarColor);
-
-  float fPixelStart_X, fPixelStart_Y;
-  float fPixelEnd_X, fPixelEnd_Y;
-  float fPixelBase_X, fPixelBase_Y;
-  MeterToPixel(vec2LineStartPos.x,vec2LineStartPos.y, fPixelStart_X, fPixelStart_Y);
-  MeterToPixel(vec2LineEndPos.x,vec2LineEndPos.y, fPixelEnd_X, fPixelEnd_Y);
-//  MeterToPixel(vec2LineStartPos.x+fBarSizeWidth_M,vec2LineStartPos.y, fPixelBase_X, fPixelBase_Y);
-
   std::shared_ptr<CApp> pApp =Get_pApp();
 
+
   for (int i=0 ; i < iSizeHeight_Pixel ; i++) {
-//    pApp->Draw_Line_Pixel(fPixelStart_X,fPixelStart_Y-(iSizeHeight_Pixel/2)+i,
-//                          fPixelBase_X,fPixelStart_Y-(iSizeHeight_Pixel/2)+i,BorderColor);
+    float fLineY=vec2Pos_Pixel.y-(iSizeHeight_Pixel/2)+i;
+    pApp->Draw_Line_Pixel(
+        vec2Pos_Pixel.x,
+        fLineY,
+        vec2Pos_Pixel.x+fBarSizeWidth_Pixel,
+        fLineY,
+        BorderColor);
+
+    if (i >0 && i < iSizeHeight_Pixel-1 ) {
+    pApp->Draw_Line_Pixel(
+        vec2Pos_Pixel.x+1,
+        fLineY,
+        vec2Pos_Pixel.x+fBarSize-1,
+        fLineY,BarColor);
+    }
   }
 
 
-//  pApp->Draw_Line_Pixel(fPixelStart_X,fPixelStart_Y,fPixelEnd_X,fPixelEnd_Y,BarColor);
-#endif // :x: for test
+  return 0;
+}
+
+int Draw_Energy_Bar(float fEnergyRate,
+                    b2Vec2 &vec2CurPos,b2Vec2 &vec2Offset,float fBarSizeWidth_M,
+                    float fBarSizeHeight_Pixel,
+                    float fScale_Pixel_per_Meter
+                    ) {
+  float fTotalWidth_Pixel =fBarSizeWidth_M*fScale_Pixel_per_Meter; // Bar Total width - pixel
+  float fBarSize = fEnergyRate *fTotalWidth_Pixel;
+  int iSizeHeight_Pixel=fBarSizeHeight_Pixel;
+  b2Vec2 vec2LineStartPos = vec2CurPos+vec2Offset;
+  b2Vec2 vec2LineStartPos_Pixel;
+  MeterToPixel(vec2LineStartPos.x,vec2LineStartPos.y,
+               vec2LineStartPos_Pixel.x,vec2LineStartPos_Pixel.y);
+  Draw_Energy_Bar(fEnergyRate,vec2LineStartPos_Pixel,fTotalWidth_Pixel,fBarSizeHeight_Pixel);
+
   return 0;
 }
 
@@ -1411,8 +1572,6 @@ int Plug_FPS_Drawer(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory, SDL_Even
   SDL_Renderer* pRenderer = pApp->m_pRenderer;
   TTF_Font*     pFont     = pApp->m_pFont;
 
-  if (Float_Common.find("DisplayTimeDiff") == Float_Common.end())
-    Float_Common["DisplayTimeDiff"] = 0.f;
 
 
   Float_Common["DisplayTimeDiff"] +=dbTimeDiff;
@@ -1438,6 +1597,17 @@ int Plug_FPS_Drawer(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory, SDL_Even
     SDL_Rect DstRect { 20,20,pTxtSurface->w,pTxtSurface->h};
     SDL_RenderCopyEx(pRenderer,pTxtTexture,NULL,&DstRect,0,NULL,SDL_FLIP_NONE);
   }
+
+
+  return 0;
+}
+
+int Plug_Judge(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory, SDL_Event* &pEvt,
+                              double& dbTimeDiff, CPlugin* pInstance) {
+
+  std::shared_ptr<CApp> pApp =Get_pApp();
+  SDL_Renderer* pRenderer = pApp->m_pRenderer;
+  TTF_Font*     pFont     = pApp->m_pFont;
 
 
   return 0;

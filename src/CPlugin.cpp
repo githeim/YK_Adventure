@@ -34,7 +34,14 @@ int CreatePlugins_byObjDir(CObjDirectory &ObjDirectory)
             __FUNCTION__,__LINE__,strObjName.c_str());
         pInstance->OnExecute = Plug_Player01;
         pInstance->OnInit = Plug_Player01_Init;
-      } else if (strTag == "Enemy_Ground_Tracker") {
+      } else if (strTag == "Player02") {
+        pInstance = new CPlugin(strObjName);
+        pInstance->m_pBody = pObj->pBody;
+        printf("\033[1;33m[%s][%d] :x: player2 instance [%s]\033[m\n",
+            __FUNCTION__,__LINE__,strObjName.c_str());
+        pInstance->OnExecute = Plug_Player01;
+        pInstance->OnInit = Plug_Player02_Init;
+      }else if (strTag == "Enemy_Ground_Tracker") {
         pInstance = new CPlugin(strObjName);
         pInstance->m_pBody = pObj->pBody;
         printf("\033[1;33m[%s][%d] :x: Enemy_Ground_Tracker instance [%s]\033[m\n",

@@ -4,9 +4,13 @@
 #include <SDL2/SDL.h>
 #include "CPlugin.h"
 #include "CApp.h"
+int Draw_Energy_Bar(float fEnergyRate, // 0.0~1.0 the rate of the energy
+                    b2Vec2 &vec2CurPos,b2Vec2 &vec2Offset,float fBarSizeWidth_M,
+                    float fBarSizeHeight_Pixel =5,
+                    float fScale_Pixel_per_Meter = WORLDSCALE_PIXEL_PER_METER
+                    );
 
-int Draw_Energy_Bar(float &fCurEnergy,float &fMaxEnergy,
-                    b2Vec2 &vec2CurPos,b2Vec2 &vec2Offset,float fBarSizeWidth_M);
+
 int Dbg_DrawPoint_Scale(float fX_M,float fY_M); 
 int Dbg_DrawPoint_Scale(float fX_M,float fY_M,SDL_Color &Color); 
 int Dbg_DrawLine_Scale(float fAX_M,float fAY_M,
@@ -25,6 +29,11 @@ int Plug_Player01_Init(CPhysic_World* &pWorld,
                   CObjDirectory &ObjDirectory,
                   SDL_Event* &pEvt,double& dbTimeDiff,
                   CPlugin* pInstance);
+int Plug_Player02_Init(CPhysic_World* &pWorld,
+                  CObjDirectory &ObjDirectory,
+                  SDL_Event* &pEvt,double& dbTimeDiff,
+                  CPlugin* pInstance);
+
 
 int Plug_Player01(CPhysic_World* &pWorld,
                   CObjDirectory &ObjDirectory,

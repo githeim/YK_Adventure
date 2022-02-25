@@ -12,12 +12,35 @@
 #include "CPlugin.h"
 #include "ObjAttr.h"
 
+inline float MeterToPixel_X(float &fX_M,
+                       float fScale_Pixel_per_Meter =WORLDSCALE_PIXEL_PER_METER,
+                       int iScreenWidth =SCREEN_WIDTH) {
+  return (float)((fX_M) *fScale_Pixel_per_Meter) +(SCREEN_WIDTH/2);
+}
+inline float MeterToPixel_Y(float &fY_M,
+                       float fScale_Pixel_per_Meter =WORLDSCALE_PIXEL_PER_METER,
+                       int iScreenWidth =SCREEN_WIDTH) {
+  return -(float)((fY_M) *fScale_Pixel_per_Meter) +(SCREEN_HEIGHT/2);
+}
+
 inline void MeterToPixel(float &fX_M,float &fY_M,float &fPixel_X,float &fPixel_Y,
-             float fScale_Pixel_per_Meter =WORLDSCALE_PIXEL_PER_METER) {
-  fPixel_X =  (float)((fX_M) *fScale_Pixel_per_Meter) +(SCREEN_WIDTH/2);
-  fPixel_Y = -(float)((fY_M) *fScale_Pixel_per_Meter) +(SCREEN_HEIGHT/2);
+             float fScale_Pixel_per_Meter =WORLDSCALE_PIXEL_PER_METER,
+             int iScreenWidth =SCREEN_WIDTH) 
+{
+  fPixel_X =MeterToPixel_X(fX_M,fScale_Pixel_per_Meter,iScreenWidth);
+  fPixel_Y =MeterToPixel_Y(fY_M,fScale_Pixel_per_Meter,iScreenWidth);  
   return;
 }
+
+inline b2Vec2 PixelToMeter(int iPixel_X, int iPixel_Y,
+                 float fScale_Pixel_per_Meter=WORLDSCALE_PIXEL_PER_METER,
+                 int iScreenWidth =SCREEN_WIDTH ) 
+{
+  float fX_M =  (iPixel_X-(float)(SCREEN_WIDTH/2.f)) / fScale_Pixel_per_Meter;
+  float fY_M = -(iPixel_Y -(SCREEN_HEIGHT/2))        / fScale_Pixel_per_Meter;
+  return b2Vec2(fX_M,fY_M);
+}
+
 
 // Sprite type (texture index --> m_mapTextures, sprite area)
 typedef std::tuple<int,SDL_Rect> Sprite_t;
