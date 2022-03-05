@@ -74,6 +74,12 @@ int Plug_FPS_Drawer(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory,
 int Plug_Spawner(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory, 
                               SDL_Event* &pEvt,
                               double& dbTimeDiff, CPlugin* pInstance); 
+int Plug_Scroll_Init(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory, 
+                              SDL_Event* &pEvt,
+                              double& dbTimeDiff, CPlugin* pInstance);
+int Plug_Scroll(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory, 
+                              SDL_Event* &pEvt,
+                              double& dbTimeDiff, CPlugin* pInstance);
 
 
 

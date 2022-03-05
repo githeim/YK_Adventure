@@ -12,6 +12,15 @@
 #include "CPlugin.h"
 #include "ObjAttr.h"
 
+// For debugging, performance checker flag
+#define PERF_CHK
+
+typedef struct ScreenOffset {
+  int x;
+  int y;
+} Offset_T;
+
+
 inline float MeterToPixel_X(float &fX_M,
                        float fScale_Pixel_per_Meter =WORLDSCALE_PIXEL_PER_METER,
                        int iScreenWidth =SCREEN_WIDTH) {
@@ -90,8 +99,7 @@ public:
     return Register_Textures(TMX_context,strTileResourcePath,m_pRenderer);
   };
 
-  int Draw_World(CPhysic_World* pWorld);
-  int Draw_World(CPhysic_World* pWorld,SDL_Renderer* pRenderer);
+  int Draw_World(float fScale_Pixel_per_Meter,SDL_Renderer* pRenderer);
 
   int Generate_Sprites(TMX_Ctx &TMX_context,
                        std::map<int, Sprite_t> &mapSprites);
@@ -201,11 +209,16 @@ public:
 
 
   // Display Offset
-  std::tuple<int,int> m_DisplayOffSet ={0,0};
+  Offset_T m_DisplayOffSet ={0,0};
+
+
+  void Set_DisplayOffSet(int iX_Pixel,int iY_Pixel);
+  void Get_DisplayOffSet(int &iX_Pixel,int &iY_Pixel);
+
   // tile draw flag
-  bool m_bTileDraw = false;
-  // vector draw flag
-  bool m_bVectorDraw = true;
+  bool m_bTileDraw = true;
+  // vector draw flag - draw physic vector for debugging
+  bool m_bVectorDraw = false;
   // stop flag
   bool m_bStopFlag = false;
 

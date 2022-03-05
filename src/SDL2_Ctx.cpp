@@ -99,6 +99,7 @@ int DrawText(SDL_Texture* &pTxtTexture,TTF_Font* &pFont,
 }
 
 
+
 /**
  * @brief Control frame rates
  *

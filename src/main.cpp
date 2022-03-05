@@ -60,7 +60,17 @@ int main(int argc, char *argv[]) {
   std::string strTileResourcePath="resource/tiles/";
   CTMX_Reader TMX_Reader;
   std::shared_ptr<TMX_Ctx> pTMX_Ctx = std::make_shared<TMX_Ctx>();
-  TMX_Reader.Read_TMX_Ctx("stage00.tmx",*pTMX_Ctx,strTileResourcePath);
+//  TMX_Reader.Read_TMX_Ctx("stage00.tmx",*pTMX_Ctx,strTileResourcePath);
+//  640x32 ; FPS 50
+  TMX_Reader.Read_TMX_Ctx("template_stage_640_32.tmx",*pTMX_Ctx,strTileResourcePath);
+//  320x32 ; FPS 100
+//  TMX_Reader.Read_TMX_Ctx("template_stage_320_32.tmx",*pTMX_Ctx,strTileResourcePath);
+//  160x32 ; FPS 200
+//  TMX_Reader.Read_TMX_Ctx("template_stage_160_32.tmx",*pTMX_Ctx,strTileResourcePath);
+//  80x32 ; FPS  350
+//  TMX_Reader.Read_TMX_Ctx("template_stage_80_32.tmx",*pTMX_Ctx,strTileResourcePath);
+//  70x32 ; FPS  380
+//  TMX_Reader.Read_TMX_Ctx("template_stage_70_32.tmx",*pTMX_Ctx,strTileResourcePath);
   Set_pTMX_Ctx (pTMX_Ctx);
 
   std::shared_ptr<CApp> pApp = std::make_shared<CApp>();

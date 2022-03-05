@@ -1,6 +1,59 @@
 #include "CApp.h"
 #include "CPlugin.h"
 
+
+/**
+ * @brief 화면 영역 밖의 Sprite는 출력하지 않도록 하기 위해서 ,
+ *        Sprite가 화면 영역 안에 있는지 검사하는데 사용된다
+ *        Not to show the sprites that are not in the screen,
+ *        This function is used to check the sprite is in the screen or not
+ * @param iPixel_X[IN]
+ * @param iPixel_Y[IN]
+ * @param iOffset_X[IN]
+ * @param iOffset_Y[IN]
+ * @param iScreenWidth[IN]
+ * @param iScreenHeight[IN]
+ * @param fScale[IN]
+ * @param iBorderMargin_Pixel[IN]
+ *
+ * @return if the sprite is not in the screen it returns false
+ */
+inline bool Check_Border(int iPixel_X,int iPixel_Y,
+                         int iOffset_X,int iOffset_Y,
+                         int iScreenWidth=SCREEN_WIDTH,
+                         int iScreenHeight=SCREEN_HEIGHT,
+                         float fScale =1.0f,int iBorderMargin_Pixel = 24) {
+
+  if (
+    (int)((float)iPixel_X*fScale+(float)iOffset_X) < 0 - iBorderMargin_Pixel ||
+    (int)((float)iPixel_X*fScale+(float)iOffset_X) > iScreenWidth + iBorderMargin_Pixel 
+    ) {
+    return false;
+  }
+  return true;
+}
+
+inline void Dbg_Print_AVG(double dbFPS) {
+  static int iCnt=0;
+  static double dbSum=0;
+  iCnt++;
+  dbSum+=dbFPS;
+
+
+  float fTimeInterval = 5.f;
+  static std::chrono::time_point<std::chrono::system_clock> PrevTime;
+  std::chrono::duration<double> Time_diff_SEC;
+  Time_diff_SEC = std::chrono::system_clock::now() - PrevTime;
+  if (Time_diff_SEC.count() > fTimeInterval) {
+    PrevTime =std::chrono::system_clock::now();
+    double dbAvg=dbSum/iCnt;
+    printf("\033[1;32m[%s][%d] :x: In %f Sec, FPS Avg =%f \033[m\n",
+        __FUNCTION__,__LINE__,fTimeInterval,dbAvg);
+    dbSum=0;
+    iCnt=0;
+
+  }
+}
 int CApp::Init(
       SDL_Window*   &pWindow, 
       SDL_Renderer* &pRenderer,
@@ -144,9 +197,11 @@ int CApp::OnExecute(SDL_Renderer* pRenderer) {
   SDL_Event Evt;
   SDL_Event* pEvt=nullptr;
 
+  float fScale_Pixel_per_Meter = m_pWorld->m_fScale_Pixel_per_Meter;
   double dbActualFPS = 0.0f;
   double dbTimeDiff = 0;
-
+  // for testing & debugging screen scroll
+  int iOffset_Pixel = 40;
   //int iCnt=0;
   if (SDL_SetRenderDrawColor(pRenderer, 255, 0, 0, SDL_ALPHA_OPAQUE)) {
     printf("\033[1;31m[%s][%d] :x: Err \033[m\n",__FUNCTION__,__LINE__);
@@ -170,7 +225,7 @@ int CApp::OnExecute(SDL_Renderer* pRenderer) {
   Init_ObjPlugins(m_pWorld,m_ObjDirectory);
   while (!bQuit) {
 
-    Draw_World(m_pWorld);
+    Draw_World(fScale_Pixel_per_Meter,m_pRenderer);
     
     SDL_SetRenderTarget(pRenderer,nullptr);
     SDL_RenderCopyEx(pRenderer,m_mapDrawingTextures[0],NULL,NULL,0,NULL,SDL_FLIP_NONE);
@@ -198,6 +253,8 @@ int CApp::OnExecute(SDL_Renderer* pRenderer) {
       }
       else if( Evt.type == SDL_KEYDOWN )
       {
+        int iDisplayOffset_X,iDisplayOffset_Y;
+        Get_DisplayOffSet(iDisplayOffset_X,iDisplayOffset_Y);
         switch( Evt.key.keysym.sym )
         {
           case SDLK_q:
@@ -206,16 +263,16 @@ int CApp::OnExecute(SDL_Renderer* pRenderer) {
           case SDLK_d:
             break;
           case SDLK_LEFT:
-            (std::get<0>(m_DisplayOffSet))--;
+            Set_DisplayOffSet(iDisplayOffset_X+iOffset_Pixel,iDisplayOffset_Y);
             break;
           case SDLK_RIGHT:
-            (std::get<0>(m_DisplayOffSet))++;
+            Set_DisplayOffSet(iDisplayOffset_X-iOffset_Pixel,iDisplayOffset_Y);
             break;
           case SDLK_UP:
-            (std::get<1>(m_DisplayOffSet))--;
+            Set_DisplayOffSet(iDisplayOffset_X,iDisplayOffset_Y+iOffset_Pixel);
             break;
           case SDLK_DOWN:
-            (std::get<1>(m_DisplayOffSet))++;
+            Set_DisplayOffSet(iDisplayOffset_X,iDisplayOffset_Y-iOffset_Pixel);
             break;
           case SDLK_t:
             m_bTileDraw=!m_bTileDraw;
@@ -225,11 +282,6 @@ int CApp::OnExecute(SDL_Renderer* pRenderer) {
             m_bStopFlag =!m_bStopFlag;
             break;
         }
-        //printf("\033[1;33m[%s][%d] :x: Offset %d %d \033[m\n",
-        //    __FUNCTION__,__LINE__,
-        //    std::get<0>(m_DisplayOffSet),
-        //    std::get<1>(m_DisplayOffSet)
-        //    );
       }
 
       pEvt= &Evt;
@@ -240,6 +292,9 @@ int CApp::OnExecute(SDL_Renderer* pRenderer) {
     Remove_Objs(m_pWorld,m_ObjDirectory,pEvt,dbTimeDiff, m_setObjPluginToRemove);
 
     dbActualFPS = Frame_Rate_Control(SCREEN_FPS,dbTimeDiff);
+#ifdef PERF_CHK
+    Dbg_Print_AVG(dbActualFPS);
+#endif
     Set_FPS(dbActualFPS);
 
 
@@ -267,8 +322,8 @@ void CApp::Draw_Sprite(int iPixel_X, int iPixel_Y, int iIdx,
                        ) {
   SDL_SetRenderDrawColor(pRenderer, 255, 55, 55, SDL_ALPHA_OPAQUE);
   float fScale = 1; 
-  int iOffset_X= std::get<0>(m_DisplayOffSet);
-  int iOffset_Y=std::get<1>(m_DisplayOffSet);;
+  int iOffset_X,iOffset_Y;
+  Get_DisplayOffSet(iOffset_X,iOffset_Y);
   int iTexIdx =std::get<0>(mapSprites[iIdx]);
   SDL_Rect Rect_Sprite = std::get<1>(mapSprites[iIdx]);
 
@@ -318,10 +373,12 @@ int CApp::Draw_Line_Pixel(float fPixelA_X,float fPixelA_Y,
                           float fPixelB_X,float fPixelB_Y,SDL_Color& Color,
                           SDL_Renderer* & pRenderer )
 {
-  float fAX = fPixelA_X+std::get<0>(m_DisplayOffSet);
-  float fAY = fPixelA_Y+std::get<1>(m_DisplayOffSet);
-  float fBX = fPixelB_X+std::get<0>(m_DisplayOffSet);
-  float fBY = fPixelB_Y+std::get<1>(m_DisplayOffSet);
+  int iDisplayOffset_X,iDisplayOffset_Y;
+  Get_DisplayOffSet(iDisplayOffset_X,iDisplayOffset_Y);
+  float fAX = fPixelA_X+iDisplayOffset_X;
+  float fAY = fPixelA_Y+iDisplayOffset_Y;
+  float fBX = fPixelB_X+iDisplayOffset_X;
+  float fBY = fPixelB_Y+iDisplayOffset_Y;
   SDL_SetRenderDrawColor(pRenderer,Color.r,Color.g,Color.b,Color.a);
   return SDL_RenderDrawLine(pRenderer, fAX, fAY, fBX, fBY);
 }
@@ -378,8 +435,11 @@ int  CApp::Draw_Point_Pixel(float fPixel_X,float fPixel_Y,
                             SDL_Renderer* & pRenderer,
                             SDL_Color& Color)
 {
-  float fX = fPixel_X+std::get<0>(m_DisplayOffSet);
-  float fY = fPixel_Y+std::get<1>(m_DisplayOffSet);
+  int iDisplayOffset_X,iDisplayOffset_Y;
+  Get_DisplayOffSet(iDisplayOffset_X,iDisplayOffset_Y);
+
+  float fX = fPixel_X+iDisplayOffset_X;
+  float fY = fPixel_Y+iDisplayOffset_Y;
   SDL_SetRenderDrawColor(pRenderer,Color.r,Color.g,Color.b,Color.a);
   // Cross shape point
   SDL_RenderDrawPoint(pRenderer,fX,   fY);
@@ -438,15 +498,31 @@ int CApp::Create_World(TMX_Ctx &TMX_context,
   return 0;
 }
 
+int CApp::Draw_World(float fScale_Pixel_per_Meter,SDL_Renderer* pRenderer) {
+  static int iCallCnt=0;
+  static int iLoopCnt=0;
+  static int iSkipCnt=0;
+  static int iLayerCnt=0;
 
-int CApp::Draw_World(CPhysic_World* pWorld,SDL_Renderer* pRenderer) {
-  float fScale_Pixel_per_Meter = pWorld->m_fScale_Pixel_per_Meter;
-  SDL_SetRenderTarget(m_pRenderer, m_mapDrawingTextures[0]);
-  SDL_SetRenderDrawColor(m_pRenderer, 55, 55, 55, SDL_ALPHA_OPAQUE);
-  SDL_RenderClear(m_pRenderer);
+#ifdef PERF_CHK
+  iLoopCnt=0;
+  iSkipCnt=0;
+  iCallCnt++;
+  iLayerCnt=0;
+#endif
+
+  int iDisplayOffset_X,iDisplayOffset_Y;
+  Get_DisplayOffSet(iDisplayOffset_X,iDisplayOffset_Y);
+
+  SDL_SetRenderTarget(pRenderer, m_mapDrawingTextures[0]);
+  SDL_SetRenderDrawColor(pRenderer, 55, 55, 55, SDL_ALPHA_OPAQUE);
+  SDL_RenderClear(pRenderer);
 
   // Draw Layers according to m_vecLayerSequence
   for (int iLayer : m_ObjDirectory.m_vecLayerSequence) {
+#ifdef PERF_CHK
+    iLayerCnt++;
+#endif
     for (auto pObj : m_ObjDirectory.m_mapLayerObj[iLayer]) {
       ObjAttr_t& Obj = *pObj;
       int   iIdx    = Obj.iTileIdx;
@@ -459,6 +535,18 @@ int CApp::Draw_World(CPhysic_World* pWorld,SDL_Renderer* pRenderer) {
            (int)((fX_M-fWidth/2.0f) *fScale_Pixel_per_Meter) +(SCREEN_WIDTH/2);
       int iPixel_Y = 
           -(int)((fY_M+fHeight/2.0f) *fScale_Pixel_per_Meter)+(SCREEN_HEIGHT/2);
+#ifdef PERF_CHK
+      iLoopCnt++;
+#endif
+      if (Check_Border(iPixel_X,iPixel_Y,iDisplayOffset_X,iDisplayOffset_Y) 
+          == false) 
+      {
+#ifdef PERF_CHK
+        iSkipCnt++;
+#endif
+        // Skip drawing tiles out of screen
+        continue;
+      }
       // do not draw background's vector
       if (Obj.strPhysicType=="Background" && m_bTileDraw == false)
         m_bVectorDraw = false;
@@ -469,12 +557,17 @@ int CApp::Draw_World(CPhysic_World* pWorld,SDL_Renderer* pRenderer) {
     }
   }
 
+#ifdef PERF_CHK
+  if (iCallCnt%1200 == 0) 
+  {
+   printf("\033[1;33m[%s][%d] :x: drawing %d skip %d Loop %d skip ratio %f Layer Cnt %d\033[m\n",
+       __FUNCTION__,__LINE__,iLoopCnt-iSkipCnt,iSkipCnt,iLoopCnt,(float)(iSkipCnt*100.f/iLoopCnt),iLayerCnt);
+  }
+#endif
   return 0;
 }
 
-int CApp::Draw_World(CPhysic_World* pWorld) {
-  return Draw_World(pWorld,m_pRenderer);
-}
+
 int CApp::Spin_World(double &dbTimeDiff, CPhysic_World *pWorld) {
   pWorld->SpinWorld (dbTimeDiff);
   return 0;
@@ -626,6 +719,18 @@ int CApp::DeInit_ObjPlugins(CPhysic_World* pWorld,
     }
   }
   return 0;
+}
+
+void CApp::Set_DisplayOffSet(int iX_Pixel, int iY_Pixel) {
+  m_DisplayOffSet.x=iX_Pixel;
+  m_DisplayOffSet.y=iY_Pixel;
+
+  return;
+}
+void CApp::Get_DisplayOffSet(int &iX_Pixel, int &iY_Pixel) {
+  iX_Pixel=m_DisplayOffSet.x;
+  iY_Pixel=m_DisplayOffSet.y;
+  return;
 }
 
 

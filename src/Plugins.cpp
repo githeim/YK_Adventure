@@ -6,7 +6,16 @@
 #define AUTO_AIMING  (0)
 #define MOUSE_AIMING (1)
 
-
+// CHARACTER_IDX
+#define TSX_IDX_CHARACTERS (265)
+#define IDX_FLYER (TSX_IDX_CHARACTERS+24)
+#define IDX_PIERCING_BULLET (TSX_IDX_CHARACTERS+27)
+#define IDX_SLUG_BULLET (TSX_IDX_CHARACTERS+28)
+#define IDX_SHELL (TSX_IDX_CHARACTERS+29)
+#define IDX_FLAME_SMALL (TSX_IDX_CHARACTERS+30)
+#define IDX_FLAME_BIG (TSX_IDX_CHARACTERS+31)
+#define IDX_SMOKE_SMALL (TSX_IDX_CHARACTERS+32)
+#define IDX_SMOKE_MIDDLE (TSX_IDX_CHARACTERS+33)
 
 extern std::shared_ptr<CApp> Get_pApp() ;
 extern std::shared_ptr<TMX_Ctx> Get_pTMX_Ctx() ;
@@ -33,6 +42,19 @@ void Print_Bodies(b2Body* pBody) {
     printf("\033[1;33m[%s][%d] :x: 0x%p -> 0x%p \033[m\n",__FUNCTION__,__LINE__,b,b->GetNext());
   }
 
+}
+
+/**
+ * @brief Do screen scroll according to the current position 
+ *
+ * @param vec2CurPos_M[IN]
+ * @param pApp[OUT]
+ */
+void Do_Scroll(b2Vec2& vec2CurPos_M,std::shared_ptr<CApp> &pApp) {
+  float fX_Pixel,fY_Pixel;
+  MeterToPixel(vec2CurPos_M.x,vec2CurPos_M.y,fX_Pixel,fY_Pixel);
+  pApp->Set_DisplayOffSet(-(fX_Pixel-SCREEN_WIDTH/2),-(fY_Pixel-SCREEN_HEIGHT/2) );
+  return;
 }
 /**
  * @brief Find the bodies which has the target tags and is in the range
@@ -294,6 +316,7 @@ int Plug_Missile(CPhysic_World* &pWorld,
   std::map<std::string, b2Vec2> & Vec2_Common = pInstance->m_Vec2_Common;
   std::map<std::string, std::vector<std::string>> & Str_Vec_Common = 
                                                     pInstance->m_Str_Vec_Common;
+  int iIdxSmoke = IDX_SMOKE_MIDDLE;
   float fFirePower= Float_Common["FirePower"];
   //float fReactionRate_SEC = 0.001;
   float fReactionRate_SEC = 0.003;
@@ -378,7 +401,7 @@ int Plug_Missile(CPhysic_World* &pWorld,
     }
     pApp->Draw_Sprite_Scale(
         Vec2_Common["HitPos"].x-(1.33/2),
-        Vec2_Common["HitPos"].y+(1.33/2), 212);
+        Vec2_Common["HitPos"].y+(1.33/2), IDX_FLAME_BIG);
     if (Float_Common["LifeTime"] < 0) {
       printf("\033[1;31m[%s][%d] :x: Die Missile \033[m\n",__FUNCTION__,__LINE__);
       Play_Sound("boom");
@@ -410,7 +433,7 @@ int Plug_Missile(CPhysic_World* &pWorld,
     sprintf(pBuf,"AfterImage%02d",i);
     pApp->Draw_Sprite_Scale(
         Vec2_Common[pBuf].x-(1.33/2),
-        Vec2_Common[pBuf].y+(1.33/2), 214);
+        Vec2_Common[pBuf].y+(1.33/2), iIdxSmoke);
   }
 
   if ( Float_Common["Damage"] > 0) {
@@ -472,7 +495,6 @@ int Plug_Bullet(CPhysic_World* &pWorld,
   std::map<std::string, int> & Int_Common = pInstance->m_Int_Common;
   std::map<std::string, std::vector<std::string>> & Str_Vec_Common = 
                                                     pInstance->m_Str_Vec_Common;
-
   std::shared_ptr<CApp> pApp =Get_pApp();
   Float_Common["LifeTime"]-=dbTimeDiff;
   // Damage point of the bullet
@@ -483,7 +505,7 @@ int Plug_Bullet(CPhysic_World* &pWorld,
   if (Float_Common["MuzzleFlameTime"] > 0) {
     pApp->Draw_Sprite_Scale(
         Vec2_Common["StartPos"].x-(1.33/5),
-        Vec2_Common["StartPos"].y+(1.33/5), 211);
+        Vec2_Common["StartPos"].y+(1.33/5), IDX_FLAME_SMALL);
   }
 
 
@@ -500,7 +522,7 @@ int Plug_Bullet(CPhysic_World* &pWorld,
     if (Float_Common["HitFlameTime"]> 0) {
       pApp->Draw_Sprite_Scale(
           Vec2_Common["HitPos"].x-(1.33/2),
-          Vec2_Common["HitPos"].y+(1.33/2), 212);
+          Vec2_Common["HitPos"].y+(1.33/2), IDX_FLAME_BIG);
     }
   }
   
@@ -531,14 +553,7 @@ int Spawn_Missile(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory,
                  b2Vec2 &vec2CurPos,b2Vec2 &vec2Direction,
                  std::vector<std::string> &vecTargets) {
   int iBulletTileIdx;
-  // 209 : slug bullet
-  //int iIdxSlugBullet = 209;
-  // 208 : piercing bullet
- // int iIdxPiercingBullet = 208;
-  // 210 : shell bullet
-  int iIdxShellBullet = 210; 
-  //iBulletTileIdx= iIdxSlugBullet;
-  //iBulletTileIdx= iIdxPiercingBullet;
+  int iIdxShellBullet = IDX_SHELL; 
   iBulletTileIdx= iIdxShellBullet;
   int fBulletBaseAngle = -90.f;
   std::shared_ptr<CApp> pApp =Get_pApp();
@@ -593,11 +608,10 @@ int Spawn_Bullet(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory,
                  std::vector<std::string> &vecTargets) {
   int iBulletTileIdx;
   // 209 : slug bullet
-  int iIdxSlugBullet = 209;
+  int iIdxSlugBullet = IDX_SLUG_BULLET;
   // 208 : piercing bullet
-  //int iIdxPiercingBullet = 208;
+  //int iIdxPiercingBullet = IDX_PIERCING_BULLET;
   iBulletTileIdx= iIdxSlugBullet;
-  //iBulletTileIdx= iIdxPiercingBullet;
   float fBulletBaseAngle = -90.f;
   std::shared_ptr<CApp> pApp =Get_pApp();
   std::shared_ptr<TMX_Ctx> pTMX_Ctx =  Get_pTMX_Ctx();
@@ -675,6 +689,7 @@ int Plug_Player01_Init(CPhysic_World* &pWorld,
   std::map<std::string, float> & Float_Common = pInstance->m_Float_Common;
   std::map<std::string,std::vector<std::string>> & Str_Vec_Common = 
                                                     pInstance->m_Str_Vec_Common;
+  Int_Common["PlayerIdx"]=1;
   //Int_Common["AimingState"] = MOUSE_AIMING;
   Int_Common["AimingState"] = AUTO_AIMING;
   Int_Common["AimingTarget"] = 0;
@@ -700,6 +715,7 @@ int Plug_Player02_Init(CPhysic_World* &pWorld,
   std::map<std::string, float> & Float_Common = pInstance->m_Float_Common;
   std::map<std::string,std::vector<std::string>> & Str_Vec_Common = 
                                                     pInstance->m_Str_Vec_Common;
+  Int_Common["PlayerIdx"]=2;
   //Int_Common["AimingState"] = MOUSE_AIMING;
   Int_Common["AimingState"] = AUTO_AIMING;
   Int_Common["AimingTarget"] = 0;
@@ -733,6 +749,12 @@ int Plug_Player01(CPhysic_World* &pWorld,
   // Find Player 1 Body, it should be one
   b2Body* pBody = pInstance->m_pBody;
   b2Vec2 vec2CurPos_M=pBody->GetPosition();
+
+  // For screen scroll
+  //if (Int_Common["PlayerIdx"]==1) {
+  //  Do_Scroll(vec2CurPos_M,pApp);
+  //}
+
   b2ContactEdge* pContacts = pBody->GetContactList();
 
   float fMass = pBody->GetMass();
@@ -1435,6 +1457,7 @@ int Plug_Spawner(CPhysic_World* &pWorld,
   std::map<std::string, float> & Float_Common = pInstance->m_Float_Common;
   std::map<std::string, int> &Int_Common=pInstance->m_Int_Common;
   std::map<std::string,ObjAttr_t*> &mapObjs = ObjDirectory.m_mapObjs;
+  int iSpawnIdx = IDX_FLYER;
   Int_Common["SpawnLimit"]=6;
   b2Body* pBody = pInstance->m_pBody;
   float fSpawnRate_SEC = 1.0;
@@ -1457,7 +1480,8 @@ int Plug_Spawner(CPhysic_World* &pWorld,
       std::shared_ptr<TMX_Ctx> pTMX_Ctx =  Get_pTMX_Ctx();
 
       strSpawnedObjName = pWorld->Create_Element(
-          *(pTMX_Ctx.get()),205,vec2CurPos.x+3,vec2CurPos.y-3, ObjDirectory);
+          *(pTMX_Ctx.get()),iSpawnIdx,
+          vec2CurPos.x+3,vec2CurPos.y-3, ObjDirectory);
       pSpawnedBody = mapObjs[strSpawnedObjName]->pBody; 
 
       auto pInstance = new CPlugin(strSpawnedObjName);
@@ -1521,8 +1545,6 @@ int Draw_Energy_Bar(float fEnergyRate,
                     float fScale_Pixel_per_Meter
                     ) {
   float fTotalWidth_Pixel =fBarSizeWidth_M*fScale_Pixel_per_Meter; // Bar Total width - pixel
-  float fBarSize = fEnergyRate *fTotalWidth_Pixel;
-  int iSizeHeight_Pixel=fBarSizeHeight_Pixel;
   b2Vec2 vec2LineStartPos = vec2CurPos+vec2Offset;
   b2Vec2 vec2LineStartPos_Pixel;
   MeterToPixel(vec2LineStartPos.x,vec2LineStartPos.y,
@@ -1605,10 +1627,88 @@ int Plug_FPS_Drawer(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory, SDL_Even
 int Plug_Judge(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory, SDL_Event* &pEvt,
                               double& dbTimeDiff, CPlugin* pInstance) {
 
+//  std::shared_ptr<CApp> pApp =Get_pApp();
+//  SDL_Renderer* pRenderer = pApp->m_pRenderer;
+//  TTF_Font*     pFont     = pApp->m_pFont;
+
+
+  return 0;
+}
+int Plug_Scroll_Init(CPhysic_World* &pWorld,             
+            CObjDirectory &ObjDirectory,
+            SDL_Event* &pEvt,double& dbTimeDiff,
+            CPlugin* pInstance) {
+  std::map<std::string, float> & Float_Common = pInstance->m_Float_Common;
+  //std::map<std::string, int> & Int_Common = pInstance->m_Int_Common;
+  //std::map<std::string, b2Vec2> & Vec2_Common = pInstance->m_Vec2_Common;
+  std::map<std::string, void*> & Ptr_Common = pInstance->m_Ptr_Common;
+
+  // Check Every 1 second
+  Float_Common["FindScrollTarget_Interval_SEC"] = 1;
+  Float_Common["FindScrollTarget_time_SEC"] = 0;
+  Ptr_Common["ScrollTarget"] = nullptr;
+  
+
+
+  return 0;
+}
+
+
+
+/**
+ * @brief Set the screen scroll
+ *
+ * @param pWorld
+ * @param ObjDirectory
+ * @param pEvt
+ * @param dbTimeDiff
+ * @param pInstance
+ *
+ * @return 
+ */
+int Plug_Scroll(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory, SDL_Event* &pEvt,
+                              double& dbTimeDiff, CPlugin* pInstance) {
+
   std::shared_ptr<CApp> pApp =Get_pApp();
-  SDL_Renderer* pRenderer = pApp->m_pRenderer;
-  TTF_Font*     pFont     = pApp->m_pFont;
 
+  std::map<std::string, float> & Float_Common = pInstance->m_Float_Common;
+  std::map<std::string, void*> & Ptr_Common = pInstance->m_Ptr_Common;
+  ObjAttr_t* &pScrollTarget =(ObjAttr_t*&)Ptr_Common["ScrollTarget"];
 
+  float &fFindScrollTarget_time_SEC =
+                                  Float_Common["FindScrollTarget_time_SEC"];
+  float &fFindScrollTarget_Interval_SEC = 
+                                  Float_Common["FindScrollTarget_Interval_SEC"];
+  fFindScrollTarget_time_SEC += dbTimeDiff;
+  // Find Scroll target every "FindScrollTarget_Interval_SEC" seconds
+  if (fFindScrollTarget_time_SEC > fFindScrollTarget_Interval_SEC) {
+    fFindScrollTarget_time_SEC=0;
+    // Find player 1 
+    if (ObjDirectory.m_mapTagObj.find("Player01") != ObjDirectory.m_mapTagObj.end()){
+      if (ObjDirectory.m_mapTagObj["Player01"].size() > 1) {
+        printf("\033[1;31m[%s][%d] :x: Error! Player01 Tag"
+            " should be unique \033[m\n",
+            __FUNCTION__,__LINE__);
+        return -1;
+      }
+      pScrollTarget =(ObjAttr_t*)ObjDirectory.m_mapTagObj["Player01"][0];
+    }
+    else if (ObjDirectory.m_mapTagObj.find("Player02") != ObjDirectory.m_mapTagObj.end()){
+      if (ObjDirectory.m_mapTagObj["Player01"].size() > 1) {
+        printf("\033[1;31m[%s][%d] :x: Error! Player02 Tag"
+            " should be unique \033[m\n",
+            __FUNCTION__,__LINE__);
+        return -1;
+      }
+      pScrollTarget =(ObjAttr_t*)ObjDirectory.m_mapTagObj["Player02"][0];
+
+    } else
+      pScrollTarget = nullptr;
+  }
+
+  if (pScrollTarget != nullptr && pScrollTarget->pBody != nullptr) {
+    b2Vec2 vec2CurPos_M = pScrollTarget->pBody->GetPosition();
+    Do_Scroll(vec2CurPos_M,pApp);
+  }
   return 0;
 }

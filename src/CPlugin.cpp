@@ -85,16 +85,11 @@ int CreatePlugins_byObjDir(CObjDirectory &ObjDirectory)
  * @return 
  */
 int CreateGeneralPlugins(CObjDirectory &ObjDirectory) {
-//  // Create FPS Drawer
-//  auto pInstance = new CPlugin();
-//  pInstance->m_pBody= nullptr;
-//  pInstance->OnExecute= Plug_FPS_Drawer;
-//  pInstance->OnInit =   Plug_FPS_Drawer_Init;
-//  pInstance->OnDeInit = Plug_FPS_Drawer_DeInit;
-//  //ObjDirectory.m_vecObjPluginInstance.push_back(pInstance);
-
-  ObjAttr_t* pInstance = new ObjAttr_t();
-  auto pPlugInstance = new CPlugin();
+  ObjAttr_t* pInstance =nullptr;
+  CPlugin* pPlugInstance=nullptr;
+  // Create FPS Drawer
+  pInstance = new ObjAttr_t();
+  pPlugInstance = new CPlugin();
   pPlugInstance->m_pBody= nullptr;
   pPlugInstance->OnExecute= Plug_FPS_Drawer;
   pPlugInstance->OnInit =   Plug_FPS_Drawer_Init;
@@ -102,6 +97,19 @@ int CreateGeneralPlugins(CObjDirectory &ObjDirectory) {
   pInstance->pPlugin= pPlugInstance;
 
   ObjDirectory.m_vecObjPluginInstance.push_back(pInstance);
+
+  // Create scroll operator 
+  pInstance = new ObjAttr_t();
+  pPlugInstance = new CPlugin();
+  pPlugInstance->m_pBody= nullptr;
+  pPlugInstance->OnExecute= Plug_Scroll;
+  pPlugInstance->OnInit =   Plug_Scroll_Init;
+  pPlugInstance->OnDeInit = nullptr;
+  pInstance->pPlugin= pPlugInstance;
+
+  ObjDirectory.m_vecObjPluginInstance.push_back(pInstance);
+
+
   return 0;
 }
 
