@@ -213,7 +213,7 @@ void DeInit_Sound() {
       Mix_FreeChunk(pSound); 
       pSound = nullptr;
       printf("\033[1;33m[%s][%d] :x: DeInit sound [%s] \033[m\n",
-          __FUNCTION__,__LINE__,item.first);
+          __FUNCTION__,__LINE__,item.first.c_str());
 
     }
   }

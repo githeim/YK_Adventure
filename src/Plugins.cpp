@@ -870,10 +870,14 @@ int Plug_Player01(CPhysic_World* &pWorld,
 
   // Mouse aiming
   b2Vec2 vec2MouseAiming;
-  int x, y;
-  SDL_GetMouseState(&x, &y);
+  int iMouse_X_Pixel, iMouse_Y_Pixel,iDisplayOffset_X,iDisplayOffset_Y;
+  SDL_GetMouseState(&iMouse_X_Pixel, &iMouse_Y_Pixel);
+  pApp->Get_DisplayOffSet(iDisplayOffset_X,iDisplayOffset_Y);
+  iMouse_X_Pixel-=iDisplayOffset_X;
+  iMouse_Y_Pixel-=iDisplayOffset_Y;
   float fScale_Pixel_per_Meter = pWorld->m_fScale_Pixel_per_Meter;
-  b2Vec2 vec2Cursor_M = PixelToMeter(x,y,fScale_Pixel_per_Meter);
+  b2Vec2 vec2Cursor_M = PixelToMeter(iMouse_X_Pixel,iMouse_Y_Pixel,fScale_Pixel_per_Meter);
+
   vec2MouseAiming =   vec2Cursor_M-vec2CurPos_M;
   vec2MouseAiming.Normalize();
 
@@ -1006,7 +1010,10 @@ int Plug_Player01(CPhysic_World* &pWorld,
                 __FUNCTION__,__LINE__);
             break;
           case SDLK_f:
-            printf("\033[1;32m[%s][%d] :x: Mouse %d %d \033[m\n",__FUNCTION__,__LINE__,x,y);
+            printf("\033[1;32m[%s][%d] :x: Mouse %d %d,offset %d %d \033[m\n",
+                __FUNCTION__,__LINE__,iMouse_X_Pixel,iMouse_Y_Pixel,
+                iDisplayOffset_X,iDisplayOffset_Y
+                );
             printf("\033[1;33m[%s][%d] :x: Fire ,cur (%f %f)->(%f,%f) aim (%f %f) \033[m\n",
                 __FUNCTION__,__LINE__,vec2CurPos_M.x,vec2CurPos_M.y,
                                       vec2Cursor_M.x,vec2Cursor_M.y,
@@ -1671,8 +1678,6 @@ int Plug_Scroll_Init(CPhysic_World* &pWorld,
  */
 int Plug_Scroll(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory, SDL_Event* &pEvt,
                               double& dbTimeDiff, CPlugin* pInstance) {
-#if 1 // :x: for test
-
   std::shared_ptr<CApp> pApp =Get_pApp();
 
   std::map<std::string, float> & Float_Common = pInstance->m_Float_Common;
@@ -1689,7 +1694,7 @@ int Plug_Scroll(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory, SDL_Event* &
     fFindScrollTarget_time_SEC=0;
     // Find player 1 
     if (ObjDirectory.m_mapTagObj.find("Player01") != ObjDirectory.m_mapTagObj.end()){
-      if (ObjDirectory.m_mapTagObj["Player01"].size() > 1) {
+      if (ObjDirectory.m_mapTagObj["Player01"].size() != 1) {
         printf("\033[1;31m[%s][%d] :x: Error! Player01 Tag"
             " should be unique \033[m\n",
             __FUNCTION__,__LINE__);
@@ -1698,7 +1703,7 @@ int Plug_Scroll(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory, SDL_Event* &
       pScrollTarget =(ObjAttr_t*)ObjDirectory.m_mapTagObj["Player01"][0];
     }
     else if (ObjDirectory.m_mapTagObj.find("Player02") != ObjDirectory.m_mapTagObj.end()){
-      if (ObjDirectory.m_mapTagObj["Player01"].size() > 1) {
+      if (ObjDirectory.m_mapTagObj["Player02"].size() != 1) {
         printf("\033[1;31m[%s][%d] :x: Error! Player02 Tag"
             " should be unique \033[m\n",
             __FUNCTION__,__LINE__);
@@ -1714,6 +1719,5 @@ int Plug_Scroll(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory, SDL_Event* &
     b2Vec2 vec2CurPos_M = pScrollTarget->pBody->GetPosition();
     Do_Scroll(vec2CurPos_M,pApp);
   }
-#endif // :x: for test
   return 0;
 }

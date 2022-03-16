@@ -339,35 +339,7 @@ int CApp::OnExecute(SDL_Renderer* pRenderer) {
 
   return 0;
 }
-#if 0 // :x: for test
 
-void CApp::Draw_Sprite(int iPixel_X, int iPixel_Y, int iIdx, 
-                       float fAngle,
-                       std::map<int, Sprite_t>     &mapSprites,
-                       std::map<int, SDL_Texture*> &mapTextures,
-                       SDL_Renderer* &pRenderer
-                       ) {
-  SDL_SetRenderDrawColor(pRenderer, 255, 55, 55, SDL_ALPHA_OPAQUE);
-  float fScale = 1; 
-  int iOffset_X,iOffset_Y;
-  Get_DisplayOffSet(iOffset_X,iOffset_Y);
-  int iTexIdx =std::get<0>(mapSprites[iIdx]);
-  SDL_Rect Rect_Sprite = std::get<1>(mapSprites[iIdx]);
-
-  SDL_Rect DstRect = {
-    (int)((float)iPixel_X*fScale+(float)iOffset_X),
-    (int)((float)iPixel_Y*fScale+(float)iOffset_Y),
-    (int)((float)Rect_Sprite.w*fScale),
-    (int)((float)Rect_Sprite.h*fScale)};
-
-  // draw physic engine body boundary (vector graphic)
-  if (m_bVectorDraw)
-    SDL_RenderCopyEx(pRenderer, m_pVectorBoxTexture, NULL,&DstRect,fAngle,NULL,SDL_FLIP_NONE );
-  // draw Tile
-  if (m_bTileDraw)
-    SDL_RenderCopyEx(pRenderer, m_mapTextures[iTexIdx], &Rect_Sprite,&DstRect,fAngle,NULL,SDL_FLIP_NONE );
-}
-#else
 void CApp::Draw_Sprite(int iPixel_X, int iPixel_Y, int iIdx, 
                        float fAngle,
                        std::map<int, Sprite_t>     &mapSprites,
@@ -394,7 +366,6 @@ void CApp::Draw_Sprite(int iPixel_X, int iPixel_Y, int iIdx,
   if (m_bTileDraw)
     SDL_RenderCopyEx(pRenderer, m_mapTextures[iTexIdx], &Rect_Sprite,&DstRect,fAngle,NULL,SDL_FLIP_NONE );
 }
-#endif // :x: for test
 
 void CApp::Draw_Sprite(int iPixel_X, int iPixel_Y, int iIdx,float fAngle) {
   return Draw_Sprite(iPixel_X, iPixel_Y, iIdx,
