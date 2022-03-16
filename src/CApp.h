@@ -13,7 +13,10 @@
 #include "ObjAttr.h"
 
 // For debugging, performance checker flag
-#define PERF_CHK
+//#define PERF_CHK
+
+void Set_DrawingScale(float fVal);
+float Get_DrawingScale(); 
 
 typedef struct ScreenOffset {
   int x;
@@ -216,9 +219,9 @@ public:
   void Get_DisplayOffSet(int &iX_Pixel,int &iY_Pixel);
 
   // tile draw flag
-  bool m_bTileDraw = true;
+  bool m_bTileDraw = false;
   // vector draw flag - draw physic vector for debugging
-  bool m_bVectorDraw = false;
+  bool m_bVectorDraw = true;
   // stop flag
   bool m_bStopFlag = false;
 

@@ -52,8 +52,9 @@ void Print_Bodies(b2Body* pBody) {
  */
 void Do_Scroll(b2Vec2& vec2CurPos_M,std::shared_ptr<CApp> &pApp) {
   float fX_Pixel,fY_Pixel;
+  float fScale = Get_DrawingScale(); 
   MeterToPixel(vec2CurPos_M.x,vec2CurPos_M.y,fX_Pixel,fY_Pixel);
-  pApp->Set_DisplayOffSet(-(fX_Pixel-SCREEN_WIDTH/2),-(fY_Pixel-SCREEN_HEIGHT/2) );
+  pApp->Set_DisplayOffSet(-(fX_Pixel*fScale-SCREEN_WIDTH/2),-(fY_Pixel*fScale-SCREEN_HEIGHT/2) );
   return;
 }
 /**
@@ -750,10 +751,6 @@ int Plug_Player01(CPhysic_World* &pWorld,
   b2Body* pBody = pInstance->m_pBody;
   b2Vec2 vec2CurPos_M=pBody->GetPosition();
 
-  // For screen scroll
-  //if (Int_Common["PlayerIdx"]==1) {
-  //  Do_Scroll(vec2CurPos_M,pApp);
-  //}
 
   b2ContactEdge* pContacts = pBody->GetContactList();
 
@@ -1005,10 +1002,16 @@ int Plug_Player01(CPhysic_World* &pWorld,
           case SDLK_e:
             //pBody->ApplyForceToCenter(b2Vec2( 0,-2000), true);
             pBody->ApplyAngularImpulse(30, true);
-            printf("\033[1;36m[%s][%d] :x: change \033[m\n",__FUNCTION__,__LINE__);
+            printf("\033[1;36m[%s][%d] :x: change \033[m\n",
+                __FUNCTION__,__LINE__);
             break;
           case SDLK_f:
-            printf("\033[1;33m[%s][%d] :x: Fire \033[m\n",__FUNCTION__,__LINE__);
+            printf("\033[1;32m[%s][%d] :x: Mouse %d %d \033[m\n",__FUNCTION__,__LINE__,x,y);
+            printf("\033[1;33m[%s][%d] :x: Fire ,cur (%f %f)->(%f,%f) aim (%f %f) \033[m\n",
+                __FUNCTION__,__LINE__,vec2CurPos_M.x,vec2CurPos_M.y,
+                                      vec2Cursor_M.x,vec2Cursor_M.y,
+                                      vec2BulletDirection.x,vec2BulletDirection.y);
+
 
             {
               if (!Spawn_Bullet(pWorld,ObjDirectory,vec2CurPos_M,
@@ -1668,6 +1671,7 @@ int Plug_Scroll_Init(CPhysic_World* &pWorld,
  */
 int Plug_Scroll(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory, SDL_Event* &pEvt,
                               double& dbTimeDiff, CPlugin* pInstance) {
+#if 1 // :x: for test
 
   std::shared_ptr<CApp> pApp =Get_pApp();
 
@@ -1710,5 +1714,6 @@ int Plug_Scroll(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory, SDL_Event* &
     b2Vec2 vec2CurPos_M = pScrollTarget->pBody->GetPosition();
     Do_Scroll(vec2CurPos_M,pApp);
   }
+#endif // :x: for test
   return 0;
 }

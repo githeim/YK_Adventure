@@ -83,8 +83,8 @@ class CObjDirectory {
 
   // The tiles are drown by these sequence
   std::vector<int> m_vecLayerSequence = 
-                             {LAYER_GROUND,LAYER_OBJ,LAYER_UI};
+                           //  {LAYER_GROUND,LAYER_OBJ,LAYER_UI};
                            //  {LAYER_BACKGROUND,LAYER_GROUND,LAYER_OBJ};
-                           // {LAYER_BACKGROUND,LAYER_GROUND,LAYER_OBJ,LAYER_UI};
+                            {LAYER_BACKGROUND,LAYER_GROUND,LAYER_OBJ,LAYER_UI};
 };
 #endif /* ifndef _OBJ_ATTR_H_ */

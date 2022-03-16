@@ -136,20 +136,23 @@ std::string CPhysic_World::Create_Element(TMX_Ctx &TMX_context, int iTileIdx,
   }
 
   if ( !CTMX_Reader::GetPhysicType(TMX_context,iTileIdx,strPhysicType)) {
-    if (strPhysicType == "Background") {
+    if (strPhysicType == "Background" || strPhysicType == "UI") {
       std::string strTag="";
       static int iCnt = 0;
       iCnt++;
       char pBuf[256]={}; 
       sprintf(pBuf,"%s_%03.2f_%03.2f",strPhysicType.c_str(),fX_M,fY_M);
       strObjName = pBuf;
+      printf("\033[1;33m[%s][%d] :x: [%s] %f\033[m\n",
+          __FUNCTION__,__LINE__,strPhysicType.c_str(),fTileSizeWidth_M);
+
       if (!CTMX_Reader::GetTag(TMX_context, iTileIdx, strTag)) {
         printf("\033[1;32m[%s][%d] :x: Tag %s \033[m\n",
             __FUNCTION__,__LINE__,strTag.c_str());
       }
       // background tile is 1.33M x 1.33M
-      float fW_M=1.33, fH_M=1.33,fAngle =0;
-      Register_Background(ObjDirectory.m_mapObjs,
+      float fW_M=fTileSizeWidth_M, fH_M=fTileSizeHeight_M,fAngle =0;
+      Register_NonPhysics(ObjDirectory.m_mapObjs,
                           strObjName,strTag,strPhysicType,
                           iTileIdx,fX_M,fY_M,fW_M,fH_M,fAngle);
 
@@ -294,6 +297,41 @@ int CPhysic_World::Create_PolygonShape(
                            float(24.f/2.f/m_fScale_Pixel_per_Meter));
   mapPolygonShape["Character_Box"] = pCharacter_Box;
   return 0;
+}
+int CPhysic_World::Register_NonPhysics(std::map<std::string, ObjAttr_t*> &mapObjs,
+    std::string &strObjName,
+    std::string &strTag, std::string &strPhysicType, int &iTileIdx, 
+    float &fX_M, float &fY_M, float &fW_M, float &fH_M, float &fAngle) {
+  mapObjs[strObjName] = new ObjAttr_t;
+  mapObjs[strObjName]->strObjName = strObjName;
+  if (strPhysicType == "Background"){
+    mapObjs[strObjName]->iLayerIdx = LAYER_BACKGROUND;
+  } else 
+  if (strPhysicType == "UI") {
+    mapObjs[strObjName]->iLayerIdx = LAYER_UI;
+  } 
+  mapObjs[strObjName]->iTileIdx = iTileIdx;
+  mapObjs[strObjName]->pBody = nullptr;
+  if (strTag != "") {
+    mapObjs[strObjName]->vecTag.clear(); 
+    mapObjs[strObjName]->vecTag.push_back(strTag); 
+  }
+  mapObjs[strObjName]->strPhysicType = strPhysicType;
+  mapObjs[strObjName]->pPlugin=nullptr;
+  if (strPhysicType == "UI") {
+    mapObjs[strObjName]->TileInfo={fX_M,fY_M,fW_M,fH_M,0};
+  } else
+    mapObjs[strObjName]->TileInfo={fX_M,fY_M,fW_M,fH_M,0};
+
+
+  // Set getter functions
+  mapObjs[strObjName]->fX_M   = std::bind(&ObjAttr_t::GetStaticTile_fX_M,mapObjs[strObjName]);
+  mapObjs[strObjName]->fY_M   = std::bind(&ObjAttr_t::GetStaticTile_fY_M,mapObjs[strObjName]);
+  mapObjs[strObjName]->fW_M   = std::bind(&ObjAttr_t::GetTile_fW_M,mapObjs[strObjName]);
+  mapObjs[strObjName]->fH_M   = std::bind(&ObjAttr_t::GetTile_fH_M,mapObjs[strObjName]);
+  mapObjs[strObjName]->fAngle = std::bind(&ObjAttr_t::GetStaticTile_fAngle,mapObjs[strObjName]);
+  return 0;
+
 }
 
 

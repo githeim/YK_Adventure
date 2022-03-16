@@ -1,9 +1,18 @@
 #include "CApp.h"
 #include "CPlugin.h"
 
+// Sprite draw scale
+float g_fDrawingScale=1.f ;
+void Set_DrawingScale(float fVal) {
+  g_fDrawingScale = fVal;
+}
+float Get_DrawingScale() {
+  return g_fDrawingScale;
+}
+
 
 /**
- * @brief 화면 영역 밖의 Sprite는 출력하지 않도록 하기 위해서 ,
+ * @brief 화면 영역 밖의 Sprite는 출력하지 않도록 하기 위해서 
  *        Sprite가 화면 영역 안에 있는지 검사하는데 사용된다
  *        Not to show the sprites that are not in the screen,
  *        This function is used to check the sprite is in the screen or not
@@ -13,16 +22,17 @@
  * @param iOffset_Y[IN]
  * @param iScreenWidth[IN]
  * @param iScreenHeight[IN]
- * @param fScale[IN]
+ * @param fScale[IN] drawing enlargement scale 1x 1.5x 2x ...
  * @param iBorderMargin_Pixel[IN]
  *
  * @return if the sprite is not in the screen it returns false
  */
 inline bool Check_Border(int iPixel_X,int iPixel_Y,
                          int iOffset_X,int iOffset_Y,
+                         float fScale =1.0f,
                          int iScreenWidth=SCREEN_WIDTH,
                          int iScreenHeight=SCREEN_HEIGHT,
-                         float fScale =1.0f,int iBorderMargin_Pixel = 24) {
+                         int iBorderMargin_Pixel = 24) {
 
   if (
     (int)((float)iPixel_X*fScale+(float)iOffset_X) < 0 - iBorderMargin_Pixel ||
@@ -283,6 +293,21 @@ int CApp::OnExecute(SDL_Renderer* pRenderer) {
             break;
         }
       }
+      else if (Evt.type == SDL_MOUSEWHEEL) {
+        if(Evt.wheel.y > 0) // scroll up
+        {
+          // Put code for handling "scroll up" here!
+          Set_DrawingScale(Get_DrawingScale()+.1f);
+        }
+        else if(Evt.wheel.y < 0) // scroll down
+        {
+          // Put code for handling "scroll down" here!
+          Set_DrawingScale(Get_DrawingScale()-.1f);
+
+        }
+        printf("\033[1;33m[%s][%d] :x: Drawing Scale =%f \033[m\n",
+            __FUNCTION__,__LINE__,Get_DrawingScale());
+      }
 
       pEvt= &Evt;
     }
@@ -314,6 +339,8 @@ int CApp::OnExecute(SDL_Renderer* pRenderer) {
 
   return 0;
 }
+#if 0 // :x: for test
+
 void CApp::Draw_Sprite(int iPixel_X, int iPixel_Y, int iIdx, 
                        float fAngle,
                        std::map<int, Sprite_t>     &mapSprites,
@@ -340,6 +367,34 @@ void CApp::Draw_Sprite(int iPixel_X, int iPixel_Y, int iIdx,
   if (m_bTileDraw)
     SDL_RenderCopyEx(pRenderer, m_mapTextures[iTexIdx], &Rect_Sprite,&DstRect,fAngle,NULL,SDL_FLIP_NONE );
 }
+#else
+void CApp::Draw_Sprite(int iPixel_X, int iPixel_Y, int iIdx, 
+                       float fAngle,
+                       std::map<int, Sprite_t>     &mapSprites,
+                       std::map<int, SDL_Texture*> &mapTextures,
+                       SDL_Renderer* &pRenderer
+                       ) {
+  SDL_SetRenderDrawColor(pRenderer, 255, 55, 55, SDL_ALPHA_OPAQUE);
+  float fScale = Get_DrawingScale(); 
+  int iOffset_X,iOffset_Y;
+  Get_DisplayOffSet(iOffset_X,iOffset_Y);
+  int iTexIdx =std::get<0>(mapSprites[iIdx]);
+  SDL_Rect Rect_Sprite = std::get<1>(mapSprites[iIdx]);
+
+  SDL_Rect DstRect = {
+    (int)((float)iPixel_X*fScale+(float)iOffset_X),
+    (int)((float)iPixel_Y*fScale+(float)iOffset_Y),
+    (int)((float)Rect_Sprite.w*fScale),
+    (int)((float)Rect_Sprite.h*fScale)};
+
+  // draw physic engine body boundary (vector graphic)
+  if (m_bVectorDraw)
+    SDL_RenderCopyEx(pRenderer, m_pVectorBoxTexture, NULL,&DstRect,fAngle,NULL,SDL_FLIP_NONE );
+  // draw Tile
+  if (m_bTileDraw)
+    SDL_RenderCopyEx(pRenderer, m_mapTextures[iTexIdx], &Rect_Sprite,&DstRect,fAngle,NULL,SDL_FLIP_NONE );
+}
+#endif // :x: for test
 
 void CApp::Draw_Sprite(int iPixel_X, int iPixel_Y, int iIdx,float fAngle) {
   return Draw_Sprite(iPixel_X, iPixel_Y, iIdx,
@@ -374,11 +429,12 @@ int CApp::Draw_Line_Pixel(float fPixelA_X,float fPixelA_Y,
                           SDL_Renderer* & pRenderer )
 {
   int iDisplayOffset_X,iDisplayOffset_Y;
+  float fScale = Get_DrawingScale(); 
   Get_DisplayOffSet(iDisplayOffset_X,iDisplayOffset_Y);
-  float fAX = fPixelA_X+iDisplayOffset_X;
-  float fAY = fPixelA_Y+iDisplayOffset_Y;
-  float fBX = fPixelB_X+iDisplayOffset_X;
-  float fBY = fPixelB_Y+iDisplayOffset_Y;
+  float fAX = fPixelA_X*fScale+iDisplayOffset_X;
+  float fAY = fPixelA_Y*fScale+iDisplayOffset_Y;
+  float fBX = fPixelB_X*fScale+iDisplayOffset_X;
+  float fBY = fPixelB_Y*fScale+iDisplayOffset_Y;
   SDL_SetRenderDrawColor(pRenderer,Color.r,Color.g,Color.b,Color.a);
   return SDL_RenderDrawLine(pRenderer, fAX, fAY, fBX, fBY);
 }
@@ -438,8 +494,9 @@ int  CApp::Draw_Point_Pixel(float fPixel_X,float fPixel_Y,
   int iDisplayOffset_X,iDisplayOffset_Y;
   Get_DisplayOffSet(iDisplayOffset_X,iDisplayOffset_Y);
 
-  float fX = fPixel_X+iDisplayOffset_X;
-  float fY = fPixel_Y+iDisplayOffset_Y;
+  float fScale = Get_DrawingScale(); 
+  float fX = fPixel_X*fScale+iDisplayOffset_X;
+  float fY = fPixel_Y*fScale+iDisplayOffset_Y;
   SDL_SetRenderDrawColor(pRenderer,Color.r,Color.g,Color.b,Color.a);
   // Cross shape point
   SDL_RenderDrawPoint(pRenderer,fX,   fY);
@@ -499,12 +556,11 @@ int CApp::Create_World(TMX_Ctx &TMX_context,
 }
 
 int CApp::Draw_World(float fScale_Pixel_per_Meter,SDL_Renderer* pRenderer) {
+#ifdef PERF_CHK
   static int iCallCnt=0;
   static int iLoopCnt=0;
   static int iSkipCnt=0;
   static int iLayerCnt=0;
-
-#ifdef PERF_CHK
   iLoopCnt=0;
   iSkipCnt=0;
   iCallCnt++;
@@ -518,6 +574,7 @@ int CApp::Draw_World(float fScale_Pixel_per_Meter,SDL_Renderer* pRenderer) {
   SDL_SetRenderDrawColor(pRenderer, 55, 55, 55, SDL_ALPHA_OPAQUE);
   SDL_RenderClear(pRenderer);
 
+  float fScale = Get_DrawingScale(); 
   // Draw Layers according to m_vecLayerSequence
   for (int iLayer : m_ObjDirectory.m_vecLayerSequence) {
 #ifdef PERF_CHK
@@ -538,7 +595,7 @@ int CApp::Draw_World(float fScale_Pixel_per_Meter,SDL_Renderer* pRenderer) {
 #ifdef PERF_CHK
       iLoopCnt++;
 #endif
-      if (Check_Border(iPixel_X,iPixel_Y,iDisplayOffset_X,iDisplayOffset_Y) 
+      if (Check_Border(iPixel_X,iPixel_Y,iDisplayOffset_X,iDisplayOffset_Y,fScale) 
           == false) 
       {
 #ifdef PERF_CHK

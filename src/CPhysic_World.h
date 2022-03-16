@@ -44,6 +44,13 @@ public:
                           int &iTileIdx,
                           float &fX_M,float &fY_M,float &fW_M,float &fH_M,
                           float &fAngle);
+  int Register_NonPhysics(std::map<std::string,ObjAttr_t*>& mapObjs,
+                          std::string &strObjName,
+                          std::string &strTag, std::string &strPhysicType,
+                          int &iTileIdx,
+                          float &fX_M,float &fY_M,float &fW_M,float &fH_M,
+                          float &fAngle);
+
 
 
 
