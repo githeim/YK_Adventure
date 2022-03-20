@@ -109,7 +109,8 @@ int DrawText(SDL_Texture* &pTxtTexture,TTF_Font* &pFont,
  * @return  Actual FPS
  */
 double Frame_Rate_Control(double dbFPS,double &dbTimeDiff_SEC){
-  static std::chrono::time_point<std::chrono::system_clock> Frame_time;
+  static std::chrono::time_point<std::chrono::system_clock> 
+    Frame_time = std::chrono::system_clock::now();
   std::chrono::duration<double> Frame_diff_SEC;
 
   Frame_diff_SEC = std::chrono::system_clock::now() - Frame_time;
@@ -118,7 +119,9 @@ double Frame_Rate_Control(double dbFPS,double &dbTimeDiff_SEC){
   }
   Frame_time = std::chrono::system_clock::now();
 
-  static std::chrono::time_point<std::chrono::system_clock> Actual_time;
+  static std::chrono::time_point<std::chrono::system_clock> 
+    Actual_time = std::chrono::system_clock::now();
+    
   std::chrono::duration<double> Actual_diff_SEC = 
                                  std::chrono::system_clock::now() - Actual_time;
   Actual_time = std::chrono::system_clock::now();
@@ -221,7 +224,7 @@ void DeInit_Sound() {
   printf("\033[1;33m[%s][%d] :x: DeInit Sound Done\033[m\n",
       __FUNCTION__,__LINE__);
 }
-bool g_bSoundOnff = true;
+bool g_bSoundOnff = false;
 void Set_Sound(bool bOnOff) {
   g_bSoundOnff = bOnOff;
 }

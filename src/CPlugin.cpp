@@ -77,6 +77,22 @@ int CreatePlugins_byObjDir(CObjDirectory &ObjDirectory)
   return 0;
 }
 
+int CreateGeneralPlugin(ObjAttr_t* &pInstance,
+  std::function<int(CPhysic_World* &,CObjDirectory &,SDL_Event* &,double &, CPlugin* )> OnExecute,
+  // Used when it created
+  std::function<int(CPhysic_World* &,CObjDirectory &,SDL_Event* &,double &, CPlugin* )> OnInit,
+  // Used when it destroyed
+  std::function<int(CPhysic_World* &,CObjDirectory &,SDL_Event* &,double &, CPlugin* )> OnDeInit
+) {
+  pInstance = new ObjAttr_t();
+  auto pPlugInstance = new CPlugin();
+  pPlugInstance->m_pBody   = nullptr;
+  pPlugInstance->OnExecute = OnExecute;
+  pPlugInstance->OnInit    = OnInit;  
+  pPlugInstance->OnDeInit  = OnDeInit; 
+  pInstance->pPlugin= pPlugInstance;
+  return 0;
+}
 /**
  * @brief Create Plugin instances that has no physic bodies (= not actor)
  *
@@ -86,30 +102,29 @@ int CreatePlugins_byObjDir(CObjDirectory &ObjDirectory)
  */
 int CreateGeneralPlugins(CObjDirectory &ObjDirectory) {
   ObjAttr_t* pInstance =nullptr;
-  CPlugin* pPlugInstance=nullptr;
   // Create FPS Drawer
-  pInstance = new ObjAttr_t();
-  pPlugInstance = new CPlugin();
-  pPlugInstance->m_pBody= nullptr;
-  pPlugInstance->OnExecute= Plug_FPS_Drawer;
-  pPlugInstance->OnInit =   Plug_FPS_Drawer_Init;
-  pPlugInstance->OnDeInit = Plug_FPS_Drawer_DeInit;
-  pInstance->pPlugin= pPlugInstance;
-
+  CreateGeneralPlugin(pInstance,
+      Plug_FPS_Drawer,
+      Plug_FPS_Drawer_Init,
+      Plug_FPS_Drawer_DeInit
+      );
   ObjDirectory.m_vecObjPluginInstance.push_back(pInstance);
 
   // Create scroll operator 
-  pInstance = new ObjAttr_t();
-  pPlugInstance = new CPlugin();
-  pPlugInstance->m_pBody= nullptr;
-  pPlugInstance->OnExecute= Plug_Scroll;
-  pPlugInstance->OnInit =   Plug_Scroll_Init;
-  pPlugInstance->OnDeInit = nullptr;
-  pInstance->pPlugin= pPlugInstance;
-
+  CreateGeneralPlugin(pInstance,
+      Plug_Scroll,
+      Plug_Scroll_Init,
+      nullptr
+      );
   ObjDirectory.m_vecObjPluginInstance.push_back(pInstance);
 
-
+  // Create welcome msg
+  CreateGeneralPlugin(pInstance,
+      Plug_WelcomeMsg,
+      Plug_WelcomeMsg_Init,
+      Plug_WelcomeMsg_DeInit
+      );
+  ObjDirectory.m_vecObjPluginInstance.push_back(pInstance);
   return 0;
 }
 

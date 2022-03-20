@@ -16,6 +16,17 @@
 #define IDX_FLAME_BIG (TSX_IDX_CHARACTERS+31)
 #define IDX_SMOKE_SMALL (TSX_IDX_CHARACTERS+32)
 #define IDX_SMOKE_MIDDLE (TSX_IDX_CHARACTERS+33)
+// UI IDX
+#define TSX_IDX_UI (319)
+#define IDX_BLUE_TILE_LEFT_UP (TSX_IDX_UI+264)
+#define IDX_BLUE_TILE_UP (TSX_IDX_UI+265)
+#define IDX_BLUE_TILE_RIGHT_UP (TSX_IDX_UI+266)
+#define IDX_BLUE_TILE_LEFT (TSX_IDX_UI+294)
+#define IDX_BLUE_TILE_CENTER (TSX_IDX_UI+295)
+#define IDX_BLUE_TILE_RIGHT (TSX_IDX_UI+296)
+#define IDX_BLUE_TILE_LEFT_BOTTOM (TSX_IDX_UI+324)
+#define IDX_BLUE_TILE_CENTER_BOTTOM (TSX_IDX_UI+325)
+#define IDX_BLUE_TILE_RIGHT_BOTTOM (TSX_IDX_UI+326)
 
 extern std::shared_ptr<CApp> Get_pApp() ;
 extern std::shared_ptr<TMX_Ctx> Get_pTMX_Ctx() ;
@@ -284,6 +295,7 @@ int Plug_Missile_Init(CPhysic_World* &pWorld,
   Float_Common["ReactionTimeDiff"] = 0;
   Float_Common["Rotation_Rate"] = 1440; // degree per sec ;
                                         // this is related to the hit rate
+  Float_Common["ScanRange"] = 55;
   Int_Common["DamageFlag"]=false;
   Float_Common["FirePower"] = 1000;
   Float_Common["LifeTime"] = 8;
@@ -331,7 +343,7 @@ int Plug_Missile(CPhysic_World* &pWorld,
   pBody->ApplyForceToCenter(vec2Direction, true); 
 
 
-  float fRange_M = 55.f;
+  float &fRange_M = Float_Common["ScanRange"];
 
   // Target to Attack
 //  std::vector<std::string> vecTargetTags ={
@@ -699,6 +711,7 @@ int Plug_Player01_Init(CPhysic_World* &pWorld,
   Float_Common["Energy"]= 100;
   Float_Common["TotalEnergy"] = 100;
   Float_Common["Damage"]= 0;
+  Float_Common["ScanRange"] = 35;
 
   Float_Common["BulletImpulse"]= 200.f;
   Float_Common["RecoilRate"]= 0.1f;
@@ -725,6 +738,7 @@ int Plug_Player02_Init(CPhysic_World* &pWorld,
   Float_Common["Energy"]= 100;
   Float_Common["TotalEnergy"] = 100;
   Float_Common["Damage"]= 0;
+  Float_Common["ScanRange"] = 35;
 
   Float_Common["BulletImpulse"]= 200.f;
   Float_Common["RecoilRate"]= 0.1f;
@@ -840,7 +854,7 @@ int Plug_Player01(CPhysic_World* &pWorld,
   bool bAutoAiming = false;
   b2Vec2 vec2AutoAiming;
   // Target Search Range (Meter)
-  float fRange_M = 35.f;
+  float &fRange_M = Float_Common["ScanRange"];
 
   std::vector<b2Body*> vecTargetBodies;
   Find_Bodies(vecTargetTags,fRange_M,vec2CurPos_M,vecTargetBodies,ObjDirectory);
@@ -1140,11 +1154,10 @@ int Plug_Enemy_Flyer_Init(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory,
   Float_Common["TotalEnergy"]= 100;
   Float_Common["Energy"] = Float_Common["TotalEnergy"];
   Float_Common["Damage"] = 0;
+  Float_Common["ScanRange"]=25;
 
   Float_Common["BulletImpulse"]= 200.f;
   Float_Common["RecoilRate"]= 0.015f;
-
- 
 
   Str_Vec_Common["Targets"]= { "Player01","Player02",
                                "Missile_Player"
@@ -1177,7 +1190,7 @@ int Plug_Enemy_Flyer(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory,
   float fCtrlRate_SEC = 0.5;
   float fReactionRate_SEC =Float_Common["ReactionTime"];
   // Target Search Range (Meter)
-  float fRange_M = 35.f;
+  float &fRange_M = Float_Common["ScanRange"];
   float fMoveSpeed = 3.0;
   float fMoveSpeed_X = 0;
   float fMoveSpeed_Y = 0;
@@ -1649,8 +1662,6 @@ int Plug_Scroll_Init(CPhysic_World* &pWorld,
             SDL_Event* &pEvt,double& dbTimeDiff,
             CPlugin* pInstance) {
   std::map<std::string, float> & Float_Common = pInstance->m_Float_Common;
-  //std::map<std::string, int> & Int_Common = pInstance->m_Int_Common;
-  //std::map<std::string, b2Vec2> & Vec2_Common = pInstance->m_Vec2_Common;
   std::map<std::string, void*> & Ptr_Common = pInstance->m_Ptr_Common;
 
   // Check Every 1 second
@@ -1719,5 +1730,131 @@ int Plug_Scroll(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory, SDL_Event* &
     b2Vec2 vec2CurPos_M = pScrollTarget->pBody->GetPosition();
     Do_Scroll(vec2CurPos_M,pApp);
   }
+  return 0;
+}
+int Plug_WelcomeMsg(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory, SDL_Event* &pEvt,
+                              double& dbTimeDiff, CPlugin* pInstance) {
+  std::map<std::string, float> & Float_Common = pInstance->m_Float_Common;
+  std::map<std::string, void*> & Ptr_Common = pInstance->m_Ptr_Common;
+  ObjAttr_t* &pDisplayTarget =(ObjAttr_t*&)Ptr_Common["DisplayTarget"];
+  std::shared_ptr<CApp> pApp =Get_pApp();
+
+
+
+  if (Float_Common["MsgDisplayTime"] > 0 ) {
+    Float_Common["MsgDisplayTime"]-=dbTimeDiff;
+
+    if (ObjDirectory.m_mapTagObj.find("Player01") != ObjDirectory.m_mapTagObj.end()){
+      if (ObjDirectory.m_mapTagObj["Player01"].size() != 1) {
+        pDisplayTarget = nullptr;
+        return -1;
+      }
+      pDisplayTarget = 
+        (ObjAttr_t*)ObjDirectory.m_mapTagObj["Player01"][0];
+    }
+    if (pDisplayTarget != nullptr) {
+      b2Vec2 vec2DrawPos = pDisplayTarget->pBody->GetPosition();
+      pApp->Draw_Sprite_Scale(
+          vec2DrawPos.x,
+          vec2DrawPos.y+5, IDX_BLUE_TILE_LEFT_UP);
+      pApp->Draw_Sprite_Scale(
+          vec2DrawPos.x+(16.f/18.f),
+          vec2DrawPos.y+5, IDX_BLUE_TILE_UP);
+      pApp->Draw_Sprite_Scale(
+          vec2DrawPos.x+2*(16.f/18.f),
+          vec2DrawPos.y+5, IDX_BLUE_TILE_UP);
+      pApp->Draw_Sprite_Scale(
+          vec2DrawPos.x+3*(16.f/18.f),
+          vec2DrawPos.y+5, IDX_BLUE_TILE_RIGHT_UP);
+
+      pApp->Draw_Sprite_Scale(
+          vec2DrawPos.x,
+          vec2DrawPos.y+5-(16.f/18.f), IDX_BLUE_TILE_LEFT);
+      pApp->Draw_Sprite_Scale(
+          vec2DrawPos.x+(16.f/18.f),
+          vec2DrawPos.y+5-(16.f/18.f), IDX_BLUE_TILE_CENTER);
+      pApp->Draw_Sprite_Scale(
+          vec2DrawPos.x+2*(16.f/18.f),
+          vec2DrawPos.y+5-(16.f/18.f), IDX_BLUE_TILE_CENTER);
+      pApp->Draw_Sprite_Scale(
+          vec2DrawPos.x+3*(16.f/18.f),
+          vec2DrawPos.y+5-(16.f/18.f), IDX_BLUE_TILE_RIGHT);
+
+      pApp->Draw_Sprite_Scale(
+          vec2DrawPos.x,
+          vec2DrawPos.y+5-2*(16.f/18.f), IDX_BLUE_TILE_LEFT_BOTTOM);
+      pApp->Draw_Sprite_Scale(
+          vec2DrawPos.x+(16.f/18.f),
+          vec2DrawPos.y+5-2*(16.f/18.f), IDX_BLUE_TILE_CENTER_BOTTOM);
+      pApp->Draw_Sprite_Scale(
+          vec2DrawPos.x+2*(16.f/18.f),
+          vec2DrawPos.y+5-2*(16.f/18.f), IDX_BLUE_TILE_CENTER_BOTTOM);
+      pApp->Draw_Sprite_Scale(
+          vec2DrawPos.x+3*(16.f/18.f),
+          vec2DrawPos.y+5-2*(16.f/18.f), IDX_BLUE_TILE_RIGHT_BOTTOM);
+      SDL_Surface*& pTxtSurface = (SDL_Surface*&)Ptr_Common["TxtSurface"];
+      SDL_Texture*& pTxtTexture = (SDL_Texture*&)Ptr_Common["TxtTexture"];
+
+
+      float fX_M=vec2DrawPos.x+2*(16.f/18.f),fY_M =vec2DrawPos.y+5-(16.f/18.f);
+      float fPixel_X,fPixel_Y;
+      MeterToPixel(fX_M,fY_M,fPixel_X,fPixel_Y);
+      int iOffset_X,iOffset_Y;
+      pApp->Get_DisplayOffSet(iOffset_X,iOffset_Y);
+
+      float fScale = Get_DrawingScale(); 
+      SDL_Rect DstRect { 
+        (int)((float)fPixel_X*fScale+(float)iOffset_X),
+          (int)((float)fPixel_Y*fScale+(float)iOffset_Y),
+          pTxtSurface->w,pTxtSurface->h};
+      SDL_Renderer* &pRenderer = pApp->m_pRenderer;
+      SDL_RenderCopyEx(pRenderer,pTxtTexture,NULL,&DstRect,0,NULL,SDL_FLIP_NONE);
+
+
+
+
+    }
+  }
+
+  return 0;
+}
+int Plug_WelcomeMsg_Init(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory, SDL_Event* &pEvt,
+                              double& dbTimeDiff, CPlugin* pInstance) {
+  std::map<std::string, float> & Float_Common = pInstance->m_Float_Common;
+  std::map<std::string, std::string> &Str_Common =pInstance->m_Str_Common;
+  std::map<std::string, void*> & Ptr_Common = pInstance->m_Ptr_Common;
+
+  std::shared_ptr<CApp> pApp =Get_pApp();
+  SDL_Renderer* pRenderer = pApp->m_pRenderer;
+  TTF_Font*     pFont     = pApp->m_pFont;
+
+  Str_Common["WelcomeMsg"]="모험을 시작하자 얘들아!";
+  //Str_Common["WelcomeMsg"]="Let's Start the Adventure!";
+  Float_Common["MsgDisplayTime"] =5.f;
+  Ptr_Common["DisplayTarget"] = nullptr;
+  Ptr_Common["TxtSurface"] = nullptr;
+  Ptr_Common["TxtTexture"] = nullptr;
+
+  SDL_Surface*& pTxtSurface = (SDL_Surface*&)Ptr_Common["TxtSurface"];
+  SDL_Texture*& pTxtTexture = (SDL_Texture*&)Ptr_Common["TxtTexture"];
+
+  pTxtSurface = TTF_RenderUTF8_Blended(pFont, Str_Common["WelcomeMsg"].c_str(), 
+      SDL_Color {0,255,0,255} );
+  pTxtTexture = SDL_CreateTextureFromSurface(pRenderer, pTxtSurface);
+
+  return 0;
+}
+int Plug_WelcomeMsg_DeInit(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory, SDL_Event* &pEvt,
+                              double& dbTimeDiff, CPlugin* pInstance) {
+  std::map<std::string, void*> & Ptr_Common = pInstance->m_Ptr_Common;
+  if (Ptr_Common["TxtSurface"]) 
+    SDL_DestroyTexture ((SDL_Texture*)Ptr_Common["TxtSurface"]);
+  if (Ptr_Common["TxtTexture"]) 
+    SDL_FreeSurface((SDL_Surface*)Ptr_Common["TxtTexture"]);
+  Ptr_Common["TxtSurface"] = nullptr;
+  Ptr_Common["TxtTexture"] = nullptr;
+
+  printf("\033[1;31m[%s][%d] :x: chk \033[m\n",__FUNCTION__,__LINE__);
+
   return 0;
 }

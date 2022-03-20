@@ -24,7 +24,8 @@ bool CTMX_Reader::Read_TSX_Ctx(std::string strTSX_file,TileSet& TileSet_Ctx,
   tinyxml2::XMLDocument xmldoc;
   std::string strTSX_Path = strFilePath + strTSX_file;
   if ( xmldoc.LoadFile(strTSX_Path.c_str()))  {
-    printf("\033[1;31m[%s][%d] :x: err \033[m\n",__FUNCTION__,__LINE__);
+    printf("\033[1;31m[%s][%d] :x: err LoadFile [%s]  \033[m\n",
+        __FUNCTION__,__LINE__,strTSX_Path.c_str());
     return false;
   }
   tinyxml2::XMLElement * pRootElement = xmldoc.RootElement();

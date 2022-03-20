@@ -219,9 +219,9 @@ public:
   void Get_DisplayOffSet(int &iX_Pixel,int &iY_Pixel);
 
   // tile draw flag
-  bool m_bTileDraw = false;
+  bool m_bTileDraw = true;
   // vector draw flag - draw physic vector for debugging
-  bool m_bVectorDraw = true;
+  bool m_bVectorDraw = false;
   // stop flag
   bool m_bStopFlag = false;
 
