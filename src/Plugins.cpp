@@ -1754,6 +1754,8 @@ int Plug_WelcomeMsg(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory, SDL_Even
     }
     if (pDisplayTarget != nullptr) {
       b2Vec2 vec2DrawPos = pDisplayTarget->pBody->GetPosition();
+#if  0// :x: for test
+
       pApp->Draw_Sprite_Scale(
           vec2DrawPos.x,
           vec2DrawPos.y+5, IDX_BLUE_TILE_LEFT_UP);
@@ -1792,6 +1794,10 @@ int Plug_WelcomeMsg(CPhysic_World* &pWorld,CObjDirectory &ObjDirectory, SDL_Even
       pApp->Draw_Sprite_Scale(
           vec2DrawPos.x+3*(16.f/18.f),
           vec2DrawPos.y+5-2*(16.f/18.f), IDX_BLUE_TILE_RIGHT_BOTTOM);
+#else
+
+      pApp->Draw_Sprite(200,200,IDX_BLUE_TILE_LEFT_UP);
+#endif // :x: for test
       SDL_Surface*& pTxtSurface = (SDL_Surface*&)Ptr_Common["TxtSurface"];
       SDL_Texture*& pTxtTexture = (SDL_Texture*&)Ptr_Common["TxtTexture"];
 

@@ -107,6 +107,13 @@ public:
   int Generate_Sprites(TMX_Ctx &TMX_context,
                        std::map<int, Sprite_t> &mapSprites);
 
+  void Draw_Sprite(int iPixel_X, int iPixel_Y,int iOffset_X,int iOffset_Y, 
+                   int iIdx, float fAngle,float fScale,
+                   std::map<int, Sprite_t>     &mapSprites,
+                   std::map<int, SDL_Texture*> &mapTextures,
+                   bool bVectorDraw,bool bTileDraw,
+                   SDL_Renderer* &pRenderer);
+
   void Draw_Sprite(int iPixel_X, int iPixel_Y, int iIdx, float fAngle,
                        std::map<int, Sprite_t>     &mapSprites,
                        std::map<int, SDL_Texture*> &mapTextures,
