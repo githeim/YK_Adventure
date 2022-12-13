@@ -7,6 +7,7 @@ ExternalProject_Add(box2d_v2_4_1
   CMAKE_ARGS
     -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/box2d
     -DCMAKE_BUILD_TYPE=Release
+    -DBOX2D_BUILD_UNIT_TESTS=0
     # :x: org -DCMAKE_BUILD_TYPE=Release
     # :x: for debug -DCMAKE_BUILD_TYPE=Debug
     # :x: for debug -DCMAKE_CXX_FLAGS_DEBUG="-g3"

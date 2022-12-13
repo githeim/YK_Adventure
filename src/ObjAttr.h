@@ -4,6 +4,7 @@
 #include <functional>
 #include <vector>
 #include <map>
+#include <string>
 #include "box2d/box2d.h"
 
 #define LAYER_BACKGROUND (1)
